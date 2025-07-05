@@ -260,6 +260,10 @@ if (!isset($_SESSION['username'])) {
         $("#search-calonkonsumen").val(displayText);
         $("#calon_konsumen_id").val(selectedId);
         $("#telp").val(selectedPhone);
+<<<<<<< HEAD
+        $("#alamat_lengkap").val($(this).data("alamat"));
+=======
+>>>>>>> 688bd13e0c499a1de517c6ade42813cd1c379a30
         
         $("#calon-konsumen-list").addClass('hidden').removeClass('block');
         

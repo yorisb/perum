@@ -361,12 +361,12 @@ $payment_status = getPaymentStatus($transaksi);
               <h4 class="text-md font-medium text-gray-700 mb-3">Penambahan</h4>
               <div class="space-y-4">
                 <div class="flex justify-between">
-                  <span class="text-sm text-gray-600">Harga Kesepakatan</span>
+                  <span class="text-sm text-gray-600">Harga Unit</span>
                   <span class="text-sm font-medium text-gray-900"><?= formatCurrency($transaksi['harga_kesepakatan']) ?></span>
                 </div>
                 
                 <div class="flex justify-between">
-                  <span class="text-sm text-gray-600">Luas Tanah</span>
+                  <span class="text-sm text-gray-600">Kelebihan Tanah</span>
                   <span class="text-sm text-gray-900"><?= $transaksi['luas_tanah'] ?> m² × <?= formatCurrency($transaksi['harga_per_m2']) ?> = <?= formatCurrency($transaksi['total_harga_penambahan']) ?></span>
                 </div>
                 
@@ -383,7 +383,7 @@ $payment_status = getPaymentStatus($transaksi);
                 </div>
                 
                 <div class="flex justify-between bg-gray-50 p-2 rounded">
-                  <span class="text-sm font-bold text-gray-700">Total Setelah Penambahan</span>
+                  <span class="text-sm font-bold text-gray-700">Grand total Penambahan</span>
                   <span class="text-sm font-bold text-gray-900"><?= formatCurrency($transaksi['total_setelah_penambahan']) ?></span>
                 </div>
               </div>

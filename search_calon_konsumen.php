@@ -2,7 +2,7 @@
 $conn = new mysqli("srv143.niagahoster.com", "n1572337_developer", "bad_cookies8080", "n1572337_developer");
 
 $query = $_GET['query'];
-$result = $conn->query("SELECT id, kode, nama_lengkap, no_hp FROM calon_konsumen 
+$result = $conn->query("SELECT id, kode, nama_lengkap, no_hp, alamat_lengkap FROM calon_konsumen 
                        WHERE nama_lengkap LIKE '%$query%' OR kode LIKE '%$query%' 
                        LIMIT 10");
 
@@ -12,10 +12,12 @@ if ($result->num_rows > 0) {
                 data-id="'.htmlspecialchars($row['id']).'" 
                 data-kode="'.htmlspecialchars($row['kode']).'" 
                 data-nama="'.htmlspecialchars($row['nama_lengkap']).'"
-                data-telp="'.htmlspecialchars($row['no_hp']).'">
+                data-telp="'.htmlspecialchars($row['no_hp']).'"
+                data-alamat="'.htmlspecialchars($row['alamat_lengkap']).'">
                 <div class="font-semibold text-gray-800">'.$row['nama_lengkap'].'</div>
                 <div class="text-sm text-gray-500">Kode: '.$row['kode'].'</div>
                 <div class="text-sm text-gray-500">Telp: '.$row['no_hp'].'</div>
+                <div class="text-sm text-gray-500">Alamat: '.$row['alamat_lengkap'].'</div>
               </div>';
     }
 } else {

@@ -276,9 +276,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <!-- Content -->
-<div class="bg-white rounded-lg shadow-md max-w-7xl mx-auto p-4 mt-20">
+<div class="rounded-lg max-w-7xl mx-auto p-4 mt-4">
     <!-- Form Header -->
-    <div class="bg-white mb-6 border-b border-gray-200 pb-4">
+    <div class="bg-white shadow-md mt-8 rounded-lg p-6 mb-4">
         <h2 class="text-2xl font-bold text-gray-800 flex items-center">
             <svg class="w-5 h-5 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path>
@@ -300,11 +300,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     <?php endif; ?>
     
-    <form method="POST" class="space-y-6 mt-16">
+    <form method="POST" class="space-y-6 mt-8">
         <input type="hidden" name="kode" value="<?= $kode ?>">
         
 <!-- Personal Information Section -->
-<div class="space-y-4 bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+<div class="space-y-4 bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
     <h3 class="text-lg font-medium text-gray-900 flex items-center">
         <svg class="w-5 h-5 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
             <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
@@ -394,7 +394,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <!-- Work Information Section -->
-<div class="space-y-4 bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+<div class="space-y-4 bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
     <h3 class="text-lg font-medium text-gray-900 flex items-center">
         <svg class="w-5 h-5 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
             <path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd"></path>
@@ -439,7 +439,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <!-- Spouse Information Section -->
-<div class="space-y-4 bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+<div class="space-y-4 bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
     <h3 class="text-lg font-medium text-gray-900 flex items-center">
         <svg class="w-5 h-5 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
             <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 12.094A5.973 5.973 0 004 15v1H1v-1a3 3 0 013.75-2.906z"></path>
@@ -494,7 +494,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <!-- Family Information Section -->
-<div class="space-y-4 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+<div class="space-y-4 bg-white p-6 rounded-lg shadow-md border border-gray-200">
     <h3 class="text-lg font-medium text-gray-900 flex items-center">
         <svg class="w-5 h-5 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
             <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
@@ -530,10 +530,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </div>
+
+<!-- Document Information Section -->
+<div class="space-y-4 bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
+    <h3 class="text-lg font-medium text-gray-900 flex items-center">
+        <svg class="w-5 h-5 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+        </svg>
+        Dokumen Pendukung
+    </h3>
+    
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+            <label class="block mb-2 text-sm font-medium text-gray-900">Scan KTP</label>
+            <div class="flex items-center">
+                <?php if (!empty($data['scan_ktp'])): ?>
+                    <a href="<?= htmlspecialchars($data['scan_ktp']) ?>" target="_blank" class="text-blue-600 hover:underline flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+                        </svg>
+                        Lihat Dokumen
+                    </a>
+                <?php else: ?>
+                    <span class="text-gray-500">Tidak ada dokumen</span>
+                <?php endif; ?>
+            </div>
+        </div>
+        
+        <div>
+            <label class="block mb-2 text-sm font-medium text-gray-900">Scan KK</label>
+            <div class="flex items-center">
+                <?php if (!empty($data['scan_kk'])): ?>
+                    <a href="<?= htmlspecialchars($data['scan_kk']) ?>" target="_blank" class="text-blue-600 hover:underline flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+                        </svg>
+                        Lihat Dokumen
+                    </a>
+                <?php else: ?>
+                    <span class="text-gray-500">Tidak ada dokumen</span>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+            <label class="block mb-2 text-sm font-medium text-gray-900">Scan Slip Gaji</label>
+            <div class="flex items-center">
+                <?php if (!empty($data['scan_slip_gaji'])): ?>
+                    <a href="<?= htmlspecialchars($data['scan_slip_gaji']) ?>" target="_blank" class="text-blue-600 hover:underline flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+                        </svg>
+                        Lihat Dokumen
+                    </a>
+                <?php else: ?>
+                    <span class="text-gray-500">Tidak ada dokumen</span>
+                <?php endif; ?>
+            </div>
+        </div>
+        
+        <div>
+            <label class="block mb-2 text-sm font-medium text-gray-900">Scan NPWP</label>
+            <div class="flex items-center">
+                <?php if (!empty($data['scan_npwp'])): ?>
+                    <a href="<?= htmlspecialchars($data['scan_npwp']) ?>" target="_blank" class="text-blue-600 hover:underline flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+                        </svg>
+                        Lihat Dokumen
+                    </a>
+                <?php else: ?>
+                    <span class="text-gray-500">Tidak ada dokumen</span>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add file upload fields if you want to allow updates -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+        <div>
+            <label for="update_scan_ktp" class="block mb-2 text-sm font-medium text-gray-900">Update Scan KTP</label>
+            <input type="file" id="update_scan_ktp" name="update_scan_ktp" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+        </div>
+        <div>
+            <label for="update_scan_kk" class="block mb-2 text-sm font-medium text-gray-900">Update Scan KK</label>
+            <input type="file" id="update_scan_kk" name="update_scan_kk" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+        </div>
+    </div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+            <label for="update_scan_slip_gaji" class="block mb-2 text-sm font-medium text-gray-900">Update Scan Slip Gaji</label>
+            <input type="file" id="update_scan_slip_gaji" name="update_scan_slip_gaji" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+        </div>
+        <div>
+            <label for="update_scan_npwp" class="block mb-2 text-sm font-medium text-gray-900">Update Scan NPWP</label>
+            <input type="file" id="update_scan_npwp" name="update_scan_npwp" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+        </div>
+    </div>
+</div>
         
         <!-- Form Actions -->
         <div class="flex justify-between pt-6 border-t border-gray-200">
-            <a href="daftar_konsumen.php" class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center">
+            <a href="daftar_konsumen.php" class="text-white bg-red-500 hover:bg-red-400 border border-red-200 focus:ring-4 focus:outline-none focus:ring-red-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center">
                 <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
                 </svg>

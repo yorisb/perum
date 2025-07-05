@@ -245,7 +245,7 @@ $payment_status = getPaymentStatus($transaksi);
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex">
+<body class="bg-gray-200 min-h-screen flex">
 
     <!-- Content -->
 <div class="container">

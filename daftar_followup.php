@@ -168,7 +168,8 @@ $result = mysqli_query($koneksi, $query);
 </style>
 </head>
 <!-- filepath: c:\laragon\www\perum\daftar_followup.php -->
-<body class="bg-gray-100 min-h-screen flex">
+<body class="bg-gray-200 min-h-screen flex">
+
 
   <!-- Sidebar Toggle Button -->
   <button id="sidebarToggle" class="text-gray-500 bg-white p-2 rounded-md border-2 border-gray-500 fixed top-4 left-4 z-50">
@@ -313,10 +314,10 @@ $result = mysqli_query($koneksi, $query);
       <thead class="text-xs text-gray-700 uppercase bg-gray-50">
         <tr>
           <th scope="col" class="px-6 py-3">No</th>
-          <th scope="col" class="px-6 py-3">Tanggal</th>
           <th scope="col" class="px-6 py-3">Calon Konsumen</th>
           <th scope="col" class="px-6 py-3">Kontak</th>
-          <th scope="col" class="px-6 py-3">Status</th>
+          <th scope="col" class="px-6 py-3">Status Terakhir</th>
+          <th scope="col" class="px-6 py-3">Tanggal</th>
           <th scope="col" class="px-6 py-3">Keterangan</th>
           <th scope="col" class="px-6 py-3">Aksi</th>
         </tr>
@@ -324,100 +325,149 @@ $result = mysqli_query($koneksi, $query);
       <tbody>
         <?php 
         $no = 1;
+        $grouped_data = [];
+        
+        // Kelompokkan data berdasarkan calon konsumen
         if(mysqli_num_rows($result) > 0) {
           while($row = mysqli_fetch_assoc($result)) {
-            $status_class = strtolower(str_replace(' ', '-', $row['status_progres']));
-            $nama_konsumen = !empty($row['nama_konsumen']) ? $row['nama_konsumen'] : $row['calon_konsumen'];
+            $key = $row['calon_konsumen'];
+            $grouped_data[$key][] = $row;
+          }
+        }
+        
+        if(!empty($grouped_data)) {
+          foreach($grouped_data as $calon_konsumen_id => $followups) {
+            $last_followup = end($followups);
+            $nama_konsumen = !empty($last_followup['nama_konsumen']) ? $last_followup['nama_konsumen'] : 'Nama tidak tersedia';
+            
+            // Define status colors based on Flowbite classes
+            $status_colors = [
+              'call-in' => 'bg-blue-100 text-blue-800',
+              'survey' => 'bg-green-100 text-green-800',
+              'reserve' => 'bg-yellow-100 text-yellow-800',
+              'dp' => 'bg-purple-100 text-purple-800',
+              'pemberkasan' => 'bg-indigo-100 text-indigo-800',
+              'wawancara' => 'bg-orange-100 text-orange-800',
+              'analisa' => 'bg-gray-100 text-gray-800',
+              'sp3k' => 'bg-teal-100 text-teal-800',
+              'reject' => 'bg-red-100 text-red-800',
+              'akad-kredit' => 'bg-emerald-100 text-emerald-800',
+              'pencairan-akad' => 'bg-violet-100 text-violet-800',
+              'cek-fisik-bangunan' => 'bg-amber-100 text-amber-800',
+              'bast' => 'bg-slate-100 text-slate-800',
+              'reques-bangun' => 'bg-rose-100 text-rose-800',
+              'pencairan-topping-off' => 'bg-fuchsia-100 text-fuchsia-800',
+              'pencairan-legalitas' => 'bg-cyan-100 text-cyan-800',
+              'komplain' => 'bg-pink-100 text-pink-800'
+            ];
+            
+            $status_class = strtolower(str_replace(' ', '-', $last_followup['status_progres']));
+            $status_color = $status_colors[$status_class] ?? 'bg-gray-100 text-gray-800';
         ?>
         <tr class="bg-white border-b hover:bg-gray-50">
           <td class="px-6 py-4"><?php echo $no++; ?></td>
           <td class="px-6 py-4">
-            <?php echo date('d M Y', strtotime($row['tgl_follow_up'])); ?>
-            <div class="text-gray-500 text-xs"><?php echo $row['melalui']; ?></div>
-          </td>
-          <td class="px-6 py-4">
-            <div class="font-medium text-gray-900"><?php echo htmlspecialchars($nama_konsumen); ?></div>
-            <?php if(!empty($row['pekerjaan'])): ?>
-              <div class="text-gray-500 text-xs"><?php echo htmlspecialchars($row['pekerjaan']); ?></div>
-            <?php endif; ?>
-            <button type="button" class="text-blue-600 text-xs hover:underline mt-1 flex items-center" 
-                    data-collapse-toggle="detailKonsumen<?php echo $row['id']; ?>">
-              <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-              </svg>
-              Detail
+            <button type="button" class="text-left w-full" onclick="toggleDetail('detailKonsumen<?php echo $last_followup['id']; ?>')">
+              <div class="font-medium text-gray-900"><?php echo htmlspecialchars($nama_konsumen); ?></div>
+              <?php if(!empty($last_followup['pekerjaan'])): ?>
+                <div class="text-gray-500 text-xs"><?php echo htmlspecialchars($last_followup['pekerjaan']); ?></div>
+              <?php endif; ?>
+              <div class="text-blue-600 text-xs hover:underline mt-1">Lihat riwayat (<?php echo count($followups); ?>x follow up)</div>
             </button>
-            <div id="detailKonsumen<?php echo $row['id']; ?>" class="hidden bg-gray-50 p-3 rounded mt-2 space-y-1 text-xs">
-              <?php if(!empty($row['alamat_lengkap'])): ?>
-                <div><span class="font-semibold">Alamat:</span> <?php echo htmlspecialchars($row['alamat_lengkap']); ?></div>
-              <?php endif; ?>
-              <?php if(!empty($row['no_hp'])): ?>
-                <div><span class="font-semibold">No HP:</span> <?php echo htmlspecialchars($row['no_hp']); ?></div>
-              <?php endif; ?>
-              <?php if(!empty($row['email'])): ?>
-                <div><span class="font-semibold">Email:</span> <?php echo htmlspecialchars($row['email']); ?></div>
-              <?php endif; ?>
-            </div>
           </td>
           <td class="px-6 py-4">
-            <?php if(!empty($row['telp'])): ?>
-              <a href="https://wa.me/<?php echo $row['telp']; ?>" class="text-green-600 hover:text-green-800 flex items-center" target="_blank">
+            <?php if(!empty($last_followup['no_hp'])): ?>
+              <a href="https://wa.me/<?php echo $last_followup['no_hp']; ?>" class="text-green-600 hover:text-green-800 flex items-center" target="_blank">
                 <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-6.29-3.91c.545 1.37 1.676 2.522 3.054 3.069.197.075.396.111.57.111.248 0 .471-.06.644-.122.446-.174.853-.785.992-1.44.174-.694.174-1.285.025-1.459-.149-.173-1.065-.81-1.657-.109-.198.223-.595.669-.793.893-.198.223-.397.26-.644.074-.248-.186-1.065-.794-1.98-1.833-.893-1.012-1.488-2.165-1.676-2.917-.174-.694-.033-1.071.124-1.235.136-.136.298-.186.47-.186.149 0 .298.025.422.075.446.174.744.595.892.893.149.298.248.669.347.967.099.298.198.26.347.074.149-.186.595-.708.744-.893.149-.186.248-.26.422-.26.174 0 .347.074.446.223.099.149.595.744.694 1.016.1.272.174.52.025.818-.149.298-.595.744-1.24 1.337-1.637 1.49-2.336 1.724-3.045 1.686z"/>
                 </svg>
-                <?php echo $row['telp']; ?>
-              </a>
-            <?php elseif(!empty($row['no_hp'])): ?>
-              <a href="https://wa.me/<?php echo $row['no_hp']; ?>" class="text-green-600 hover:text-green-800 flex items-center" target="_blank">
-                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-6.29-3.91c.545 1.37 1.676 2.522 3.054 3.069.197.075.396.111.57.111.248 0 .471-.06.644-.122.446-.174.853-.785.992-1.44.174-.694.174-1.285.025-1.459-.149-.173-1.065-.81-1.657-.109-.198.223-.595.669-.793.893-.198.223-.397.26-.644.074-.248-.186-1.065-.794-1.98-1.833-.893-1.012-1.488-2.165-1.676-2.917-.174-.694-.033-1.071.124-1.235.136-.136.298-.186.47-.186.149 0 .298.025.422.075.446.174.744.595.892.893.149.298.248.669.347.967.099.298.198.26.347.074.149-.186.595-.708.744-.893.149-.186.248-.26.422-.26.174 0 .347.074.446.223.099.149.595.744.694 1.016.1.272.174.52.025.818-.149.298-.595.744-1.24 1.337-1.637 1.49-2.336 1.724-3.045 1.686z"/>
-                </svg>
-                <?php echo $row['no_hp']; ?>
+                <?php echo $last_followup['no_hp']; ?>
               </a>
             <?php else: ?>
               <span class="text-gray-400">-</span>
             <?php endif; ?>
           </td>
           <td class="px-6 py-4">
-            <?php 
-            // Define status colors based on Flowbite classes
-            $status_colors = [
-              'prospek' => 'bg-blue-100 text-blue-800',
-              'deal' => 'bg-green-100 text-green-800',
-              'gagal' => 'bg-red-100 text-red-800',
-              'pending' => 'bg-yellow-100 text-yellow-800',
-              'follow-up' => 'bg-purple-100 text-purple-800'
-            ];
-            $status_class = $status_colors[strtolower(str_replace(' ', '-', $row['status_progres']))] ?? 'bg-gray-100 text-gray-800';
-            ?>
-            <span class="text-xs font-medium px-2.5 py-0.5 rounded-full <?php echo $status_class; ?>">
-              <?php echo $row['status_progres']; ?>
+            <span class="text-xs font-medium px-2.5 py-0.5 rounded-full <?php echo $status_color; ?>">
+              <?php echo $last_followup['status_progres']; ?>
             </span>
           </td>
           <td class="px-6 py-4">
+            <?php echo date('d M Y', strtotime($last_followup['tgl_follow_up'])); ?>
+            <div class="text-gray-500 text-xs"><?php echo $last_followup['melalui']; ?></div>
+          </td>
+          <td class="px-6 py-4">
             <div class="text-xs">
-              <?php echo substr(htmlspecialchars($row['keterangan']), 0, 50); ?>...
+              <?php echo substr(htmlspecialchars($last_followup['keterangan']), 0, 50); ?>...
             </div>
-            <?php if($row['hasil']): ?>
+            <?php if($last_followup['hasil']): ?>
               <div class="mt-1">
                 <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                  Hasil: <?php echo substr(htmlspecialchars($row['hasil']), 0, 30); ?>...
+                  Hasil: <?php echo substr(htmlspecialchars($last_followup['hasil']), 0, 30); ?>...
                 </span>
               </div>
             <?php endif; ?>
           </td>
           <td class="px-6 py-4">
             <div class="flex space-x-2">
-              <a href="edit_followup.php?id=<?php echo $row['id']; ?>" class="text-blue-600 hover:text-blue-900" title="Edit">
+              <a href="edit_followup.php?id=<?php echo $last_followup['id']; ?>" class="text-blue-600 hover:text-blue-900" title="Edit">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                   <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
                 </svg>
               </a>
-              <a href="hapus_followup.php?id=<?php echo $row['id']; ?>" class="text-red-600 hover:text-red-900" title="Hapus" onclick="return confirm('Yakin hapus data ini?')">
+              <a href="hapus_followup.php?id=<?php echo $last_followup['id']; ?>" class="text-red-600 hover:text-red-900" title="Hapus" onclick="return confirm('Yakin hapus data ini?')">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                   <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                 </svg>
               </a>
+            </div>
+          </td>
+        </tr>
+        <tr id="detailKonsumen<?php echo $last_followup['id']; ?>" class="hidden bg-gray-50">
+          <td colspan="7" class="px-6 py-4">
+            <div class="space-y-4">
+              <div>
+                <h4 class="font-medium text-gray-700 mb-2">Detail Konsumen</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                  <?php if(!empty($last_followup['alamat_lengkap'])): ?>
+                    <div><span class="font-semibold">Alamat:</span> <?php echo htmlspecialchars($last_followup['alamat_lengkap']); ?></div>
+                  <?php endif; ?>
+                  <?php if(!empty($last_followup['email'])): ?>
+                    <div><span class="font-semibold">Email:</span> <?php echo htmlspecialchars($last_followup['email']); ?></div>
+                  <?php endif; ?>
+                </div>
+              </div>
+              
+              <div>
+                <h4 class="font-medium text-gray-700 mb-2">Riwayat Follow Up</h4>
+                <div class="space-y-3">
+                  <?php foreach(array_reverse($followups) as $index => $followup): ?>
+                    <div class="border-l-2 border-blue-300 pl-3 py-1">
+                      <div class="flex justify-between items-start">
+                        <div>
+                          <span class="font-medium"><?php echo date('d M Y', strtotime($followup['tgl_follow_up'])); ?></span>
+                          <span class="text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded ml-2"><?php echo $followup['melalui']; ?></span>
+                        </div>
+                        <?php 
+                        $status_class = strtolower(str_replace(' ', '-', $followup['status_progres']));
+                        $status_color = $status_colors[$status_class] ?? 'bg-gray-100 text-gray-800';
+                        ?>
+                        <span class="text-xs font-medium px-2.5 py-0.5 rounded-full <?php echo $status_color; ?>">
+                          <?php echo $followup['status_progres']; ?>
+                        </span>
+                      </div>
+                      <?php if(!empty($followup['keterangan'])): ?>
+                        <div class="text-sm mt-1"><?php echo htmlspecialchars($followup['keterangan']); ?></div>
+                      <?php endif; ?>
+                      <?php if(!empty($followup['hasil'])): ?>
+                        <div class="text-xs mt-1">
+                          <span class="font-semibold">Hasil:</span> <?php echo htmlspecialchars($followup['hasil']); ?>
+                        </div>
+                      <?php endif; ?>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              </div>
             </div>
           </td>
         </tr>
@@ -442,6 +492,14 @@ $result = mysqli_query($koneksi, $query);
   </div>
 </div>
 
+<script>
+function toggleDetail(id) {
+  const element = document.getElementById(id);
+  element.classList.toggle('hidden');
+}
+</script>
+
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Fungsi untuk filter data
@@ -450,8 +508,8 @@ $result = mysqli_query($koneksi, $query);
       const rows = document.querySelectorAll('tbody tr');
       
       rows.forEach(row => {
-        const nama = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-        const telp = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+        const nama = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        const telp = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
         
         if(nama.includes(searchValue) || telp.includes(searchValue)) {
           row.style.display = '';
@@ -472,7 +530,7 @@ $result = mysqli_query($koneksi, $query);
       }
       
       rows.forEach(row => {
-        const status = row.querySelector('td:nth-child(5)').textContent.trim();
+        const status = row.querySelector('td:nth-child(4)').textContent.trim();
         
         if(status === statusValue) {
           row.style.display = '';
@@ -547,6 +605,5 @@ $result = mysqli_query($koneksi, $query);
       transition: margin-left 0.3s ease-out, padding-left 0.3s ease-out;
     }
   </style>
-</body>
 </body>
 </html>

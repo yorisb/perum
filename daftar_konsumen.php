@@ -134,7 +134,7 @@ $result = $conn->query("SELECT kode, nama_lengkap, kartu_id, alamat_lengkap, no_
 </style>
 </head>
 
-<body class="bg-gray-100 min-h-screen flex">
+<body class="bg-gray-200 min-h-screen flex">
 
   <!-- Sidebar Toggle Button -->
   <button id="sidebarToggle" class="text-gray-500 bg-white p-2 rounded-md border-2 border-gray-500 fixed top-4 left-4 z-50">

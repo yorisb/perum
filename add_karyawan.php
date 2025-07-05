@@ -65,7 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.css" rel="stylesheet" />
     <script src="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.js" defer></script>
 </head>
+<<<<<<< HEAD
+<body class="bg-gray-200 min-h-screen flex">
+=======
 <body class="bg-gray-100 min-h-screen flex">
+>>>>>>> 688bd13e0c499a1de517c6ade42813cd1c379a30
 
   <!-- Sidebar Toggle Button -->
   <button id="sidebarToggle" class="text-gray-500 bg-white p-2 rounded-md border-2 border-gray-500 fixed top-4 left-4 z-50">

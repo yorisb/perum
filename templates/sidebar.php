@@ -59,20 +59,20 @@ $defaultAvatar = 'data:image/svg+xml;base64,' . base64_encode(
     </button>
     <!-- Dropdown Menu -->
     <ul id="transaksiDropdown" class="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['daftar_followup.php', 'daftar_konsumen.php', 'daftar_transaksi.php', 'form_jejak_followup.php', 'input_calon_konsumen.php', 'detail_konsumen.php', 'edit_konsumen.php', 'transaksi.php', 'detail_transaksi.php', 'cetak_transaksi.php', 'pembayaran.php', 'history_pembayaran.php']) ? '' : 'hidden'; ?> py-2 space-y-2">
+    <li>
+        <a href="daftar_konsumen.php" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo in_array(basename($_SERVER['PHP_SELF']), ['daftar_konsumen.php', 'input_calon_konsumen.php', 'detail_konsumen.php', 'edit_konsumen.php']) ? 'bg-green-100 dark:bg-green-700' : ''; ?>">
+          <svg class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900 dark:group-hover:text-white " fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M9 20H4v-2a3 3 0 015.356-1.857M15 11a4 4 0 10-8 0 4 4 0 008 0z" />
+          </svg>
+          <span class="ml-3">Daftar Konsumen</span>
+        </a>
+      </li>  
       <li>
         <a href="daftar_followup.php" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo in_array(basename($_SERVER['PHP_SELF']), ['daftar_followup.php', 'form_jejak_followup.php']) ? 'bg-green-100 dark:bg-green-700' : ''; ?>">
           <svg class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900 dark:group-hover:text-white " fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <span class="ml-3">Daftar Follow Up</span>
-        </a>
-      </li>
-      <li>
-        <a href="daftar_konsumen.php" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo in_array(basename($_SERVER['PHP_SELF']), ['daftar_konsumen.php', 'input_calon_konsumen.php', 'detail_konsumen.php', 'edit_konsumen.php']) ? 'bg-green-100 dark:bg-green-700' : ''; ?>">
-          <svg class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900 dark:group-hover:text-white " fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M9 20H4v-2a3 3 0 015.356-1.857M15 11a4 4 0 10-8 0 4 4 0 008 0z" />
-          </svg>
-          <span class="ml-3">Daftar Konsumen</span>
         </a>
       </li>
       <li>

@@ -41,9 +41,9 @@ try {
         unset($_SESSION['success_message']);
     }
 
-    // Ambil transaksi dengan rencana_tgl_bayar_pembayaran dalam 14 hari ke depan
+    // Ambil transaksi dengan rencana_tgl_bayar_pembayaran dalam 31 hari ke depan
     $today = date('Y-m-d');
-    $fourteen_days = date('Y-m-d', strtotime('+14 days'));
+    $thirtyone_days = date('Y-m-d', strtotime('+31 days'));
 
     $query = $conn->prepare("
         SELECT no_transaksi, nama_unit, id_konsumen, rencana_tgl_bayar_pembayaran, total_akhir
@@ -56,7 +56,7 @@ try {
         throw new Exception("Error preparing transaction query: " . $conn->error);
     }
     
-    $query->bind_param('ss', $today, $fourteen_days);
+    $query->bind_param('ss', $today, $thirtyone_days);
     if (!$query->execute()) {
         throw new Exception("Error executing transaction query: " . $query->error);
     }
@@ -79,6 +79,7 @@ try {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.js" defer></script>
 </head>
+<body class="bg-gray-200 min-h-screen flex">    
 <body class="bg-gray-100 min-h-screen flex">    
 
   <!-- Sidebar Toggle Button -->
@@ -94,12 +95,13 @@ try {
       <?php include 'templates/navbar.php'; ?>
     </div>
 
-        <main class="flex-1 p-4 md:p-6 bg-gray-100 mt-8">
+    <!-- Header -->
+    <header class="bg-white shadow-md mt-16 rounded-lg p-6 mb-4">
+      <h1 class="text-3xl font-extrabold text-gray-800">Notifikasi Tenggat Waktu Pembayaran (H-31)</h1>
+      <p class="text-gray-600 mt-2">Berikut adalah transaksi yang akan jatuh tempo pembayaran dalam 31 hari ke depan.</p>
+    </header>
+        <main class="flex-1 p-4 md:p-6 mt-8">
             <div class="max-w-6xl mx-auto">
-                <div class="mb-6">
-                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Notifikasi Tenggat Waktu Pembayaran (H-14)</h1>
-                    <p class="text-gray-500">Berikut adalah transaksi yang akan jatuh tempo pembayaran dalam 14 hari ke depan.</p>
-                </div>
                 
                 <?php if (isset($error_message)): ?>
                     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md shadow-md mb-4">
