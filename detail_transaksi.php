@@ -464,9 +464,91 @@ $payment_status = getPaymentStatus($transaksi);
       </div>
     </div>
   </div>
-  
-  <!-- Angsuran Uang Muka -->
-  <div class="bg-white shadow rounded-lg overflow-hidden mt-6 print:mt-0">
+
+  <!-- Modal Pembayaran -->
+  <div id="paymentModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full md:w-96 shadow-lg rounded-md bg-white">
+      <div class="mt-3 text-center">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">Pembayaran Angsuran DP</h3>
+          <button onclick="closePaymentModal()" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mt-2 px-4 py-3">
+          <form id="paymentForm" method="POST" action="proses_pembayaran_dp.php" class="space-y-4">
+            <input type="hidden" name="id_transaksi" id="modal_id_transaksi" value="<?= $id_transaksi ?>">
+            <input type="hidden" name="no_angsuran" id="modal_no_angsuran">
+            
+            <div class="bg-blue-50 p-3 rounded-md mb-4">
+              <p class="text-sm text-gray-700 mb-1">
+                <span class="font-semibold">Transaksi:</span> 
+                <span id="modal_transaksi">#<?= htmlspecialchars($transaksi['no_transaksi']) ?></span>
+              </p>
+              <p class="text-sm text-gray-700">
+                <span class="font-semibold">Angsuran Ke:</span> 
+                <span id="modal_angsuran_ke"></span>
+              </p>
+              <p class="text-sm text-gray-700">
+                <span class="font-semibold">Jatuh Tempo:</span> 
+                <span id="modal_jatuh_tempo"></span>
+              </p>
+            </div>
+            
+            <div>
+              <label for="modal_jumlah" class="block text-sm font-medium text-gray-700 text-left mb-1">Jumlah Bayar</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">Rp</span>
+                <input type="text" name="jumlah_bayar" id="modal_jumlah" 
+                    class="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" 
+                    required>
+              </div>
+            </div>
+            
+            <div>
+              <label for="modal_tgl_bayar" class="block text-sm font-medium text-gray-700 text-left mb-1">Tanggal Pembayaran</label>
+              <input type="date" name="tgl_bayar" id="modal_tgl_bayar" 
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" 
+                  required value="<?= date('Y-m-d') ?>">
+            </div>
+            
+            <div>
+              <label for="modal_metode" class="block text-sm font-medium text-gray-700 text-left mb-1">Metode Pembayaran</label>
+              <select name="metode_pembayaran" id="modal_metode" 
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" 
+                  required>
+                <option value="">Pilih Metode</option>
+                <option value="Transfer Bank">Transfer Bank</option>
+                <option value="Tunai">Tunai</option>
+                <option value="Kartu Kredit">Kartu Kredit</option>
+                <option value="Virtual Account">Virtual Account</option>
+              </select>
+            </div>
+            
+            <div>
+              <label for="modal_keterangan" class="block text-sm font-medium text-gray-700 text-left mb-1">Keterangan (Opsional)</label>
+              <textarea name="keterangan" id="modal_keterangan" rows="2"
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4">
+              <button type="button" onclick="closePaymentModal()" 
+                  class="px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                Batal
+              </button>
+              <button type="submit" 
+                  class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <i class="fas fa-check-circle mr-1"></i> Konfirmasi
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Angsuran Uang Muka -->
+<div class="bg-white shadow rounded-lg overflow-hidden mt-6 print:mt-0">
   <div class="px-4 py-2 border-b border-gray-200">
     <h3 class="text-base font-semibold text-gray-900">Rincian Angsuran Uang Muka</h3>
   </div>
@@ -480,18 +562,37 @@ $payment_status = getPaymentStatus($transaksi);
             <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Tanggal Jatuh Tempo</th>
             <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
             <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Tanggal Pembayaran</th>
+            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider no-print">Aksi</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <?php
           $angsuran = [];
           for ($i = 1; $i <= $transaksi['periode_uang_muka']; $i++) {
+            $jatuh_tempo = date('Y-m-d', strtotime($transaksi['tgl_transaksi'] . " + $i month"));
+            $jumlah_angsuran = $transaksi['angsuran_'.$i] ?? 0;
+            
+            // Cek apakah angsuran sudah dibayar
+            $status = 'Belum Lunas';
+            $tgl_bayar = null;
+            $badge_class = 'bg-red-100 text-red-800';
+            $badge_icon = 'exclamation-circle';
+            
+            if (isset($angsuran_dibayar[$i])) {
+              $status = $angsuran_dibayar[$i]['status'];
+              $tgl_bayar = $angsuran_dibayar[$i]['tgl_bayar'];
+              $badge_class = $status == 'Lunas' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+              $badge_icon = $status == 'Lunas' ? 'check-circle' : 'hourglass-half';
+            }
+            
             $angsuran[] = [
               'no' => $i,
-              'jumlah' => $transaksi['angsuran_'.$i] ?? 0,
-              'jatuh_tempo' => date('Y-m-d', strtotime($transaksi['tgl_transaksi'] . " + $i month")),
-              'status' => 'Belum Lunas',
-              'tgl_bayar' => null
+              'jumlah' => $jumlah_angsuran,
+              'jatuh_tempo' => $jatuh_tempo,
+              'status' => $status,
+              'tgl_bayar' => $tgl_bayar,
+              'badge_class' => $badge_class,
+              'badge_icon' => $badge_icon
             ];
           }
 
@@ -502,30 +603,83 @@ $payment_status = getPaymentStatus($transaksi);
             <td class="px-3 py-2 text-sm text-gray-900"><?= formatCurrency($item['jumlah']) ?></td>
             <td class="px-3 py-2 text-sm text-gray-500"><?= formatDate($item['jatuh_tempo']) ?></td>
             <td class="px-3 py-2">
-              <span class="px-2 inline-flex text-xs font-medium rounded-full bg-red-100 text-red-800">
-                <svg class="-ml-0.5 mr-1 h-3 w-3 text-red-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <span class="px-2 inline-flex text-xs font-medium rounded-full <?= $item['badge_class'] ?>">
+                <svg class="-ml-0.5 mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= 
+                    $item['badge_icon'] == 'check-circle' ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' : 
+                    ($item['badge_icon'] == 'hourglass-half' ? 'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z' : 
+                    'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z') 
+                  ?>" />
                 </svg>
                 <?= $item['status'] ?>
               </span>
             </td>
             <td class="px-3 py-2 text-sm text-gray-500"><?= $item['tgl_bayar'] ? formatDate($item['tgl_bayar']) : '-' ?></td>
+            <td class="px-3 py-2 no-print">
+              <?php if ($item['status'] != 'Lunas'): ?>
+              <button onclick="openPaymentModal(
+                  <?= $item['no'] ?>, 
+                  '<?= formatCurrency($item['jumlah']) ?>', 
+                  '<?= $item['jatuh_tempo'] ?>'
+              )" class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 0V4m0 7v7m-7-7h14" />
+                </svg>
+                Bayar
+              </button>
+              <?php endif; ?>
+            </td>
           </tr>
           <?php endforeach; ?>
           <tr class="bg-gray-50">
             <td class="px-3 py-2 text-sm font-medium text-gray-900">Total</td>
             <td class="px-3 py-2 text-sm font-medium text-gray-900"><?= formatCurrency($transaksi['uang_muka']) ?></td>
-            <td colspan="3"></td>
+            <td colspan="4"></td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
 </div>
-
 </div>
 
-  </div>
+  <!-- JavaScript untuk Modal Pembayaran -->
+  <script>
+    // Fungsi untuk membuka modal pembayaran
+    function openPaymentModal(no_angsuran, jumlah, jatuh_tempo) {
+      document.getElementById('modal_no_angsuran').value = no_angsuran;
+      document.getElementById('modal_angsuran_ke').textContent = 'Angsuran Ke-' + no_angsuran;
+      document.getElementById('modal_jumlah').value = jumlah.replace(/[^\d]/g, '');
+      document.getElementById('modal_jatuh_tempo').textContent = new Date(jatuh_tempo).toLocaleDateString('id-ID');
+      
+      // Set focus ke input jumlah bayar
+      document.getElementById('modal_jumlah').focus();
+      
+      // Tampilkan modal
+      document.getElementById('paymentModal').classList.remove('hidden');
+    }
+
+    // Fungsi untuk menutup modal pembayaran
+    function closePaymentModal() {
+      document.getElementById('paymentModal').classList.add('hidden');
+    }
+
+    // Format input jumlah bayar
+    document.getElementById('modal_jumlah').addEventListener('input', function(e) {
+      let value = e.target.value.replace(/[^\d]/g, '');
+      e.target.value = new Intl.NumberFormat('id-ID').format(value);
+    });
+
+    // Submit form pembayaran
+    document.getElementById('paymentForm').addEventListener('submit', function(e) {
+      // Format jumlah bayar sebelum submit (hapus titik pemisah ribuan)
+      let jumlahBayar = document.getElementById('modal_jumlah');
+      jumlahBayar.value = jumlahBayar.value.replace(/\./g, '');
+      
+      // Anda bisa menambahkan validasi tambahan di sini jika diperlukan
+      // Jika semua validasi berhasil, form akan di-submit
+    });
+  </script>
 
   <!-- Flowbite -->
   <script src="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.js"></script>

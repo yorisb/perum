@@ -151,38 +151,66 @@ if (!isset($_SESSION['username'])) {
         
         <!-- Progress Status -->
         <div class="mb-6">
-            <label for="status_progres" class="block mb-2 text-sm font-medium text-gray-900">
-                Status Progres Konsumen <span class="text-red-500">*</span>
-            </label>
+        <label for="status_progres" class="block mb-2 text-sm font-semibold text-gray-800">
+            Status Progres Konsumen <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
             <select id="status_progres" name="status_progres" required
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                <option value="" selected disabled>Pilih status progres</option>
-                <option value="Call In">Call In</option>
-                <option value="Survey">Survey</option>
-                <option value="Reserve">Reserve</option>
-                <option value="DP">DP</option>
-                <option value="Pemberkasan">Pemberkasan</option>
-                <option value="Wawancara">Wawancara</option>
-                <option value="Analisa">Analisa</option>
-                <option value="Sp3k">Sp3k</option>
-                <option value="Reject">Reject</option>
-                <option value="Akad kredit">Akad kredit</option>
-                <option value="Pencairan Akad">Pencairan Akad</option>
-                <option value="Cek Fisik Bangunan">Cek Fisik Bangunan</option>
-                <option value="BAST">BAST</option>
-                <option value="Request Bangun">Request Bangun</option>
-                <option value="Pencairan Topping Off">Pencairan Topping Off</option>
-                <option value="Pencairan Legalitas">Pencairan Legalitas</option>
-                <option value="KOMPLAIN">KOMPLAIN</option>
+            class="block w-full appearance-none p-3 text-sm text-gray-800 border border-gray-300 rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition ease-in-out duration-150">
+            
+            <option value="" disabled selected class="text-gray-400">Pilih status progres</option>
+
+            <!-- 🟡 Tahap Awal -->
+            <option disabled class="bg-yellow-100 text-yellow-700 font-semibold">-- Tahap Awal --</option>
+            <option value="Call In" class="bg-yellow-100">Call In</option>
+            <option value="Survey" class="bg-yellow-100">Survey</option>
+            <option value="Reserve" class="bg-yellow-100">Reserve</option>
+
+            <!-- 🔵 Tahap Administrasi -->
+            <option disabled class="bg-blue-100 text-blue-700 font-semibold">-- Tahap Administrasi --</option>
+            <option value="DP" class="bg-blue-100">DP</option>
+            <option value="Pemberkasan" class="bg-blue-100">Pemberkasan</option>
+            <option value="Wawancara" class="bg-blue-100">Wawancara</option>
+            <option value="Analisa" class="bg-blue-100">Analisa</option>
+            <option value="SP3K" class="bg-blue-100">SP3K</option>
+
+            <!-- ✅ Tahap Finalisasi -->
+            <option disabled class="bg-green-100 text-green-700 font-semibold">-- Tahap Finalisasi --</option>
+            <option value="Akad Kredit" class="bg-green-100">Akad Kredit</option>
+            <option value="Pencairan Akad" class="bg-green-100">Pencairan Akad</option>
+            <option value="Cek Fisik Bangunan" class="bg-green-100">Cek Fisik Bangunan</option>
+            <option value="Request Bangun" class="bg-green-100">Request Bangun</option>
+            <option value="Pencairan Topping Off" class="bg-green-100">Pencairan Topping Off</option>
+            <option value="Pencairan Legalitas" class="bg-green-100">Pencairan Legalitas</option>
+            <!-- ❌ Tahap Khusus -->
+            <option disabled class="bg-red-100 text-red-700 font-semibold">-- Tahap Khusus --</option>
+            <option value="Reject" class="bg-red-100">Reject</option>
+            <option value="Komplain" class="bg-red-100">Komplain</option>
             </select>
-        </div>
-        
-        <button type="submit" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 w-full sm:w-auto text-center flex items-center justify-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+
+            <!-- Icon panah -->
+            <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
-            Simpan Follow Up
-        </button>
+            </div>
+        </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 mt-8">
+            <a href="daftar_followup.php" class="inline-flex items-center justify-center px-5 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-300 transition">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Kembali
+            </a>
+            <button type="submit" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 w-full sm:w-auto text-center flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                </svg>
+                Simpan Follow Up
+            </button>
+        </div>
     </form>
 </div>
 
@@ -260,10 +288,7 @@ if (!isset($_SESSION['username'])) {
         $("#search-calonkonsumen").val(displayText);
         $("#calon_konsumen_id").val(selectedId);
         $("#telp").val(selectedPhone);
-<<<<<<< HEAD
         $("#alamat_lengkap").val($(this).data("alamat"));
-=======
->>>>>>> 688bd13e0c499a1de517c6ade42813cd1c379a30
         
         $("#calon-konsumen-list").addClass('hidden').removeClass('block');
         

@@ -24,7 +24,7 @@ $query = "SELECT
     tgl_transaksi, 
     id_konsumen, 
     harga_kesepakatan, 
-    kode_konsumen, 
+    kode_konsumen, cara_pem
     luas_tanah, 
     harga_per_m2, 
     total_harga_penambahan, 

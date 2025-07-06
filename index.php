@@ -1,382 +1,376 @@
 <?php
-session_start(); // Mulai session di setiap halaman
+session_start();
 
-// Include koneksi database
-include 'routes/config.php'; // Pastikan file koneksi database Anda sudah benar
-
-// Cek apakah user sudah login
+// Cek apakah user sudah login, redirect kalau iya
 if (isset($_SESSION['username'])) {
-    // Ambil data pengguna berdasarkan session
-    $username = $_SESSION['username'];
+    header('Location: dashboard.php');
+    exit;
+}
 
-    // Pastikan Anda sudah menyiapkan koneksi ke database
-    $query = "SELECT * FROM users WHERE username = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param('s', $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
-
-    if ($user) {
-        // Misalnya foto profil
-        $photo = $user['photo'];
-    } else {
-        $_SESSION['error_message'] = "Pengguna tidak ditemukan!";
-        header('Location: login.php');
-        exit;
-    }
-} else {
-    // Jika belum login, arahkan ke halaman login atau tampilkan tombol login
-    $photo = null; // Tidak ada foto profil jika belum login
+// Cek apakah ada pesan error dari proses login
+$error = '';
+if (!empty($_SESSION['login_error'])) {
+    $error = $_SESSION['login_error'];
+    unset($_SESSION['login_error']); // Hapus error biar nggak muncul terus
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Unit Perumahan - Carousel</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Aplikasi Anda</title>
   <link rel="icon" href="image/logo.ico" type="image/x-icon">
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link href="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.css" rel="stylesheet" />
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.js" defer></script>
+  <style>
+    @keyframes fade-in-down {
+      0% {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .animate-fade-in-down {
+      animation: fade-in-down 0.4s ease-out;
+    }
+    
+    /* New animations */
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+    .float-animation {
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+    .pulse-animation {
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .smooth-transition {
+      transition: all 0.3s ease;
+    }
+    
+    .password-toggle {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .password-toggle:hover {
+      transform: scale(1.1);
+    }
+    
+    .btn-hover-effect {
+      transition: all 0.3s ease;
+    }
+    .btn-hover-effect:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+  </style>  
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="min-h-screen flex flex-col justify-between bg-cover bg-center bg-no-repeat" style="background-image: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80');">
 
-<!-- Navbar -->
-<?php include 'templates/navbar.php'; ?>
+  <!-- Floating particles background -->
+  <div id="particles-js" class="fixed inset-0 z-0"></div>
 
-
-    <!-- Hero / Deskripsi Singkat -->
-    <section class="max-w-4xl mx-auto mt-10 px-4 text-center animate-on-scroll">
-        <h2 class="text-3xl font-bold mb-4">Temukan Hunian Impian Anda</h2>
-        <p class="text-gray-600 mb-6">
-        Kami menawarkan berbagai pilihan unit perumahan berkualitas, nyaman, dan strategis untuk keluarga Anda. 
-        Lihat detail setiap unit di bawah ini dan temukan rumah yang paling cocok untuk kebutuhan Anda.
-        </p>
-    </section>
-
-
-<!-- Carousel -->
-<div id="controls-carousel" class="relative w-full max-w-screen-xl mx-auto mt-10 mb-8" data-carousel="static">
-  <!-- Carousel wrapper -->
-  <div class="relative h-96 overflow-hidden rounded-lg">
-    
-    <!-- Slide 1 -->
-    <div class="hidden duration-700 ease-in-out" data-carousel-item>
-      <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80" 
-           class="absolute block w-full h-full object-cover" alt="Unit A" />
-      <div class="absolute bottom-0 bg-black bg-opacity-50 w-full p-4 text-white">
-        <h2 class="text-xl font-bold">Unit A - Tipe 36</h2>
-        <p>2 Kamar Tidur • 1 Kamar Mandi • LT 72m²</p>
-        <p class="mt-1 font-semibold">Rp250.000.000</p>
-        <a href="detail-unit-a.html" class="inline-block mt-2 px-4 py-2 bg-green-500 hover:bg-green-700 text-white text-sm rounded-md transition">Selengkapnya</a>
-      </div>
-    </div>
-
-    <!-- Slide 2 -->
-    <div class="hidden duration-700 ease-in-out" data-carousel-item>
-      <img src="image/imah.jpg" 
-           class="absolute block w-full h-full object-cover" alt="Unit B" />
-      <div class="absolute bottom-0 bg-black bg-opacity-50 w-full p-4 text-white">
-        <h2 class="text-xl font-bold">Unit B - Tipe 45</h2>
-        <p>3 Kamar Tidur • 2 Kamar Mandi • LT 90m²</p>
-        <p class="mt-1 font-semibold">Rp350.000.000</p>
-        <a href="detail-unit-b.html" class="inline-block mt-2 px-4 py-2 bg-green-500 hover:bg-green-700 text-white text-sm rounded-md transition">Selengkapnya</a>
-      </div>
-    </div>
-
-    <!-- Slide 3 -->
-    <div class="hidden duration-700 ease-in-out" data-carousel-item>
-      <img src="https://images.unsplash.com/photo-1599427303058-f04cbcf4756f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80" 
-           class="absolute block w-full h-full object-cover" alt="Unit C" />
-      <div class="absolute bottom-0 bg-black bg-opacity-50 w-full p-4 text-white">
-        <h2 class="text-xl font-bold">Unit C - Tipe 60</h2>
-        <p>3+1 Kamar Tidur • 2 Kamar Mandi • LT 120m²</p>
-        <p class="mt-1 font-semibold">Rp500.000.000</p>
-        <a href="detail-unit-c.html" class="inline-block mt-2 px-4 py-2 bg-green-500 hover:bg-green-700 text-white text-sm rounded-md transition">Selengkapnya</a>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Controls -->
-  <button type="button" class="absolute top-0 left-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
-    <span class="inline-flex items-center justify-center w-10 h-10 bg-white/70 rounded-full group-hover:bg-white/90">
-      <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+  <!-- Message Logout -->
+  <?php if (isset($_GET['message']) && $_GET['message'] === 'logout'): ?>
+    <div id="logout-alert" class="auto-dismiss fixed top-6 left-1/2 transform -translate-x-1/2 bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-md shadow-md flex items-center space-x-2 text-sm animate-fade-in-down z-50">
+      <!-- Icon -->
+      <svg class="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h5a2 2 0 012 2v1" />
       </svg>
+      <!-- Text -->
+      <div>
+        <p class="font-semibold">Berhasil logout!</p>
+        <p class="text-xs">Silakan login kembali.</p>
+      </div>
+    </div>
+  <?php endif; ?>
+
+  <!-- Login Box -->
+  <div class="flex items-center justify-center flex-grow z-10">
+    <div id="loginBox" class="bg-white bg-opacity-90 p-8 rounded-xl shadow-4xl w-full max-w-sm backdrop-blur-sm smooth-transition hover:shadow-4xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
+      <div class="flex justify-center mb-4">
+        <img src="image/logo.ico" alt="Logo" class="h-20 w-20 rounded-full border-4 border-green-200 object-cover float-animation" id="logoImage">
+      </div>
+      <h2 class="text-2xl font-bold text-gray-800 text-center">Perum Name</h2>
+      <p class="text-gray-500 text-center mt-1 mb-6">Silahkan login terlebih dahulu.</p>
+
+      <!-- Tampilkan pesan error jika ada -->
+      <?php if (!empty($error)): ?>
+        <div id="errorAlert" class="auto-dismiss bg-red-500 text-white p-3 rounded-lg mb-4 transition-opacity duration-500 flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p><?php echo $error; ?></p>
+        </div>
+      <?php endif; ?>
+
+      <!-- Success Message -->
+      <?php if (isset($_SESSION['reset_success'])): ?>
+          <div id="success-message" class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md mb-4 flex items-start gap-2">
+              <div class="flex-1"><?php echo $_SESSION['reset_success']; ?></div>
+          </div>
+
+          <script>
+              setTimeout(function() {
+                  document.getElementById('success-message').style.display = 'none';
+              }, 3000); // Hide after 3 seconds
+          </script>
+          
+          <?php unset($_SESSION['reset_success']); ?>
+      <?php endif; ?>
+
+
+      <form action="routes/auth.php" method="POST" class="space-y-4" id="loginForm">
+        <div>
+          <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+          <input type="text" id="username" name="username" required 
+             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200" 
+             placeholder="Enter your username"
+             autocomplete="username">
+        </div>
+        <div class="relative">
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+          <input type="password" id="password" name="password" required 
+             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200 pr-10" 
+             placeholder="••••••••"
+             autocomplete="current-password">
+          <button type="button" id="togglePassword" class="absolute right-3 bottom-3 text-gray-500 hover:text-gray-700 focus:outline-none password-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="eyeIcon">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </button>
+        </div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+              <!--  -->
+          </div>
+          <div class="text-sm">
+            <a href="lupa_password.php" class="font-medium text-green-600 hover:text-green-500">Lupa password?</a>
+          </div>
+        </div>
+        <button type="submit" 
+                class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition duration-200 btn-hover-effect pulse-animation">
+          Login
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-transparent bg-opacity-90 text-center text-sm text-white py-4 backdrop-blur-sm shadow-md z-10">
+    <span class="text-sm text-gray-100 sm:text-center">
+      &copy; 2025 <a href="#" class="hover:underline font-semibold text-white smooth-transition">GenIT</a>. All Rights Reserved.
     </span>
-  </button>
-  <button type="button" class="absolute top-0 right-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
-    <span class="inline-flex items-center justify-center w-10 h-10 bg-white/70 rounded-full group-hover:bg-white/90">
-      <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-      </svg>
-    </span>
-  </button>
-</div>
-
-<!-- Galeri Foto Card -->
-<section class="py-16 bg-white">
-  <div class="max-w-6xl mx-auto px-4">
-    <h2 class="text-3xl font-bold text-center mb-4">Galeri Foto Unit</h2>
-    <p class="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-      Jelajahi berbagai pilihan unit kami melalui galeri foto berikut
-    </p>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-      <!-- Ulangi blok ini untuk setiap kartu -->
-      <div class="group relative overflow-hidden rounded-lg shadow-lg transition-transform transform hover:scale-105 cursor-pointer block">
-        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80" alt="Unit A" class="w-full h-64 object-cover">
-        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-          <h3 class="text-white text-xl font-bold mb-2">Unit A - Tipe 36</h3>
-          <p class="text-gray-200 mb-4">Rumah minimalis dengan 2 kamar tidur dan 1 kamar mandi</p>
-          <a href="/register?unit=Unit A - Tipe 36" class="self-start px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition">Lihat Detail</a>
-        </div>
-      </div>
-
-      <!-- Kartu Galeri lainnya tinggal copy bagian di atas dan ganti isinya -->
-      <div class="group relative overflow-hidden rounded-lg shadow-lg transition-transform transform hover:scale-105 cursor-pointer block">
-        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80" alt="Unit B" class="w-full h-64 object-cover">
-        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-          <h3 class="text-white text-xl font-bold mb-2">Unit B - Tipe 45</h3>
-          <p class="text-gray-200 mb-4">Rumah modern dengan 3 kamar tidur dan 2 kamar mandi</p>
-          <a href="/register?unit=Unit B - Tipe 45" class="self-start px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition">Lihat Detail</a>
-        </div>
-      </div>
-
-      <!-- Kartu Galeri 3 - Unit C -->
-      <div class="group relative overflow-hidden rounded-lg shadow-lg transition-transform transform hover:scale-105 cursor-pointer block">
-        <img src="https://images.unsplash.com/photo-1599427303058-f04cbcf4756f?auto=format&fit=crop&w=800&q=80" alt="Unit C" class="w-full h-64 object-cover">
-        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-          <h3 class="text-white text-xl font-bold mb-2">Unit C - Tipe 50</h3>
-          <p class="text-gray-200 mb-4">Rumah mewah dengan ruang keluarga luas</p>
-          <a href="/register?unit=Unit C - Tipe 50" class="self-start px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition">Lihat Detail</a>
-        </div>
-      </div>
-
-      <!-- Kartu Galeri 4 - Unit D -->
-      <div class="group relative overflow-hidden rounded-lg shadow-lg transition-transform transform hover:scale-105 cursor-pointer block">
-        <img src="image/imah.jpg" alt="Unit D" class="w-full h-64 object-cover">
-        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-          <h3 class="text-white text-xl font-bold mb-2">Unit D - Tipe 60</h3>
-          <p class="text-gray-200 mb-4">Rumah dengan taman pribadi dan carport luas</p>
-          <a href="/register?unit=Unit D - Tipe 60" class="self-start px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition">Lihat Detail</a>
-        </div>
-      </div>
-
-      <!-- Kartu Galeri 5 - Unit E -->
-      <div class="group relative overflow-hidden rounded-lg shadow-lg transition-transform transform hover:scale-105 cursor-pointer block">
-        <img src="image/imah2.jpg" alt="Unit E" class="w-full h-64 object-cover">
-        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-          <h3 class="text-white text-xl font-bold mb-2">Unit E - Tipe 70</h3>
-          <p class="text-gray-200 mb-4">Rumah dua lantai dengan ruang kerja pribadi</p>
-          <a href="/register?unit=Unit E - Tipe 70" class="self-start px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition">Lihat Detail</a>
-        </div>
-      </div>
-
-      <!-- Contoh terakhir -->
-      <div class="group relative overflow-hidden rounded-lg shadow-lg transition-transform transform hover:scale-105 cursor-pointer block">
-        <img src="image/imah3.jpg" alt="Unit F" class="w-full h-64 object-cover">
-        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-          <h3 class="text-white text-xl font-bold mb-2">Unit F - Tipe 90</h3>
-          <p class="text-gray-200 mb-4">Rumah mewah dengan kolam renang pribadi</p>
-          <a href="/register?unit=Unit F - Tipe 90" class="self-start px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition">Lihat Detail</a>
-        </div>
-      </div>
-    </div>
-
-    <div class="text-center mt-10">
-      <a href="galeri.php" class="inline-block px-6 py-3 border-2 border-green-500 text-green-500 font-medium rounded-lg hover:bg-green-500 hover:text-white transition duration-300">
-        Lihat Semua Foto
-      </a>
-    </div>
-  </div>
-</section>
-
-
-<!-- Fasilitas Perumahan -->
-<section class="py-16 bg-gray-50">
-  <div class="max-w-6xl mx-auto px-4">
-    <h2 class="text-3xl font-bold text-center mb-4">Fasilitas Perumahan</h2>
-    <p class="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-      Nikmati berbagai fasilitas eksklusif yang tersedia untuk kenyamanan seluruh penghuni
-    </p>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <!-- Fasilitas 1 -->
-      <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
-        <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Kolam Renang" class="w-full h-48 object-cover">
-        <div class="p-6">
-          <h3 class="text-xl font-bold mb-2">Kolam Renang</h3>
-          <p class="text-gray-600">Kolam renang dengan area khusus anak-anak dan dewasa</p>
-        </div>
-      </div>
-      
-      <!-- Fasilitas 2 -->
-      <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
-        <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Taman Bermain" class="w-full h-48 object-cover">
-        <div class="p-6">
-          <h3 class="text-xl font-bold mb-2">Taman Bermain</h3>
-          <p class="text-gray-600">Area bermain anak dengan peralatan modern dan aman</p>
-        </div>
-      </div>
-      
-      <!-- Fasilitas 3 -->
-      <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
-        <img src="https://images.unsplash.com/photo-1543351611-58f69d7c1781?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Jogging Track" class="w-full h-48 object-cover">
-        <div class="p-6">
-          <h3 class="text-xl font-bold mb-2">Jogging Track</h3>
-          <p class="text-gray-600">Lari pagi atau sore di jalur khusus sepanjang 2km</p>
-        </div>
-      </div>
-      
-      <!-- Fasilitas 4 -->
-      <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
-        <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Area Komersial" class="w-full h-48 object-cover">
-        <div class="p-6">
-          <h3 class="text-xl font-bold mb-2">Area Komersial</h3>
-          <p class="text-gray-600">Pusat belanja dengan mini market, kafe, dan restoran</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Testimoni -->
-<section class="py-16 bg-white">
-  <div class="max-w-6xl mx-auto px-4">
-    <h2 class="text-3xl font-bold text-center mb-4">Apa Kata Mereka?</h2>
-    <p class="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-      Testimoni dari penghuni yang sudah merasakan kenyamanan tinggal di perumahan kami
-    </p>
-    
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <!-- Testimoni 1 -->
-      <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
-        <div class="flex items-center mb-4">
-          <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Sarah Wijaya" class="w-12 h-12 rounded-full mr-4">
-          <div>
-            <h4 class="font-bold">Sarah Wijaya</h4>
-            <p class="text-gray-500 text-sm">Penghuni sejak 2020</p>
-          </div>
-        </div>
-        <p class="text-gray-700 mb-4">
-          "Sangat puas dengan pelayanan dan fasilitas yang ada. Lingkungannya asri dan tetangganya ramah-ramah."
-        </p>
-        <div class="flex text-yellow-400" x-data="{ rating: 5 }">
-          <template x-for="i in 5" :key="i">
-            <svg
-              class="w-5 h-5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              :class="i <= rating ? 'text-yellow-400' : 'text-gray-300'"
-            >
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 
-              3.292a1 1 0 00.95.69h3.462c.969 0 
-              1.371 1.24.588 1.81l-2.8 2.034a1 1 0 
-              00-.364 1.118l1.07 3.292c.3.921-.755 
-              1.688-1.54 1.118l-2.8-2.034a1 1 0 
-              00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 
-              1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 
-              1 0 00.951-.69l1.07-3.292z"/>
-            </svg>
-          </template>
-        </div>
-      </div>
-
-      <!-- Testimoni 2 -->
-      <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
-        <div class="flex items-center mb-4">
-          <img src="https://randomuser.me/api/portraits/men/44.jpg" alt="Andi Prasetyo" class="w-12 h-12 rounded-full mr-4">
-          <div>
-            <h4 class="font-bold">Andi Prasetyo</h4>
-            <p class="text-gray-500 text-sm">Penghuni sejak 2019</p>
-          </div>
-        </div>
-        <p class="text-gray-700 mb-4">
-          "Lokasinya strategis, dekat dengan pusat kota dan sekolah. Anak-anak betah tinggal di sini."
-        </p>
-        <div class="flex text-yellow-400" x-data="{ rating: 5 }">
-          <template x-for="i in 5" :key="i">
-            <svg
-              class="w-5 h-5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              :class="i <= rating ? 'text-yellow-400' : 'text-gray-300'"
-            >
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 
-              3.292a1 1 0 00.95.69h3.462c.969 0 
-              1.371 1.24.588 1.81l-2.8 2.034a1 1 0 
-              00-.364 1.118l1.07 3.292c.3.921-.755 
-              1.688-1.54 1.118l-2.8-2.034a1 1 0 
-              00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 
-              1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 
-              1 0 00.951-.69l1.07-3.292z"/>
-            </svg>
-          </template>
-        </div>
-      </div>
-
-      <!-- Testimoni 3 -->
-      <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
-        <div class="flex items-center mb-4">
-          <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Rina Marlina" class="w-12 h-12 rounded-full mr-4">
-          <div>
-            <h4 class="font-bold">Rina Marlina</h4>
-            <p class="text-gray-500 text-sm">Penghuni sejak 2021</p>
-          </div>
-        </div>
-        <p class="text-gray-700 mb-4">
-          "Rumahnya nyaman dan pengelolaan lingkungannya sangat teratur. Ada banyak taman untuk anak-anak bermain."
-        </p>
-        <div class="flex text-yellow-400" x-data="{ rating: 5 }">
-          <template x-for="i in 5" :key="i">
-            <svg
-              class="w-5 h-5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              :class="i <= rating ? 'text-yellow-400' : 'text-gray-300'"
-            >
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 
-              3.292a1 1 0 00.95.69h3.462c.969 0 
-              1.371 1.24.588 1.81l-2.8 2.034a1 1 0 
-              00-.364 1.118l1.07 3.292c.3.921-.755 
-              1.688-1.54 1.118l-2.8-2.034a1 1 0 
-              00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 
-              1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 
-              1 0 00.951-.69l1.07-3.292z"/>
-            </svg>
-          </template>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- Video Properti -->
-<section class="max-w-4xl mx-auto mt-16 px-4 text-center">
-  <h2 class="text-2xl font-bold mb-4 text-gray-800">Video Tour Properti</h2>
-  <p class="text-gray-600 mb-6">Lihat secara langsung suasana dalam rumah melalui video berikut:</p>
-  <div class="aspect-w-16 aspect-h-9 rounded-lg shadow-md overflow-hidden">
-    <iframe class="w-full h-96" src="https://www.youtube.com/embed/NT0uNbfhX6U" title="Video Tour Rumah" allowfullscreen></iframe>
-  </div>
-</section>
-
-<!-- Animasi CTA -->
-<section class="mt-20 text-center">
-  <div class="bg-green-100 py-10 px-6 rounded-xl shadow-md max-w-3xl mx-auto animate-bounce">
-    <h3 class="text-2xl font-bold text-green-700">Siap Memiliki Hunian Impianmu?</h3>
-    <p class="mt-2 text-gray-600">Hubungi kami sekarang untuk konsultasi dan kunjungan lokasi gratis!</p>
-    <a href="kontak.php" class="mt-4 inline-block bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition duration-300">Hubungi Kami</a>
-  </div>
-</section>
+  </footer>
 
   <script src="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Auto-dismiss alerts
+      const alerts = document.querySelectorAll('.auto-dismiss');
+      alerts.forEach(alert => {
+        setTimeout(() => {
+          alert.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+          setTimeout(() => alert.remove(), 500);
+        }, 5000);
+      });
+      
+      // Password toggle functionality
+      const togglePassword = document.getElementById('togglePassword');
+      const passwordInput = document.getElementById('password');
+      const eyeIcon = document.getElementById('eyeIcon');
+      
+      if (togglePassword && passwordInput) {
+        togglePassword.addEventListener('click', function() {
+          const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+          passwordInput.setAttribute('type', type);
+          
+          // Toggle eye icon
+          if (type === 'text') {
+            eyeIcon.innerHTML = `
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+            `;
+          } else {
+            eyeIcon.innerHTML = `
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            `;
+          }
+        });
+      }
+      
+      // Form submission animation
+      const loginForm = document.getElementById('loginForm');
+      if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+          const submitButton = this.querySelector('button[type="submit"]');
+          if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = `
+              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing...
+            `;
+          }
+        });
+      }
+      
+      // Initialize particles.js
+      if (typeof particlesJS !== 'undefined') {
+        particlesJS("particles-js", {
+          "particles": {
+            "number": {
+              "value": 80,
+              "density": {
+                "enable": true,
+                "value_area": 800
+              }
+            },
+            "color": {
+              "value": "#ffffff"
+            },
+            "shape": {
+              "type": "circle",
+              "stroke": {
+                "width": 0,
+                "color": "#000000"
+              },
+              "polygon": {
+                "nb_sides": 5
+              }
+            },
+            "opacity": {
+              "value": 0.3,
+              "random": false,
+              "anim": {
+                "enable": false,
+                "speed": 1,
+                "opacity_min": 0.1,
+                "sync": false
+              }
+            },
+            "size": {
+              "value": 3,
+              "random": true,
+              "anim": {
+                "enable": false,
+                "speed": 40,
+                "size_min": 0.1,
+                "sync": false
+              }
+            },
+            "line_linked": {
+              "enable": true,
+              "distance": 150,
+              "color": "#ffffff",
+              "opacity": 0.2,
+              "width": 1
+            },
+            "move": {
+              "enable": true,
+              "speed": 2,
+              "direction": "none",
+              "random": false,
+              "straight": false,
+              "out_mode": "out",
+              "bounce": false,
+              "attract": {
+                "enable": false,
+                "rotateX": 600,
+                "rotateY": 1200
+              }
+            }
+          },
+          "interactivity": {
+            "detect_on": "canvas",
+            "events": {
+              "onhover": {
+                "enable": true,
+                "mode": "grab"
+              },
+              "onclick": {
+                "enable": true,
+                "mode": "push"
+              },
+              "resize": true
+            },
+            "modes": {
+              "grab": {
+                "distance": 140,
+                "line_linked": {
+                  "opacity": 1
+                }
+              },
+              "bubble": {
+                "distance": 400,
+                "size": 40,
+                "duration": 2,
+                "opacity": 8,
+                "speed": 3
+              },
+              "repulse": {
+                "distance": 200,
+                "duration": 0.4
+              },
+              "push": {
+                "particles_nb": 4
+              },
+              "remove": {
+                "particles_nb": 2
+              }
+            }
+          },
+          "retina_detect": true
+        });
+      }
+      
+      // Add floating animation to login box on hover
+      const loginBox = document.getElementById('loginBox');
+      if (loginBox) {
+        loginBox.addEventListener('mouseenter', () => {
+          loginBox.classList.add('transform', 'transition-transform', 'duration-300');
+        });
+        
+        loginBox.addEventListener('mouseleave', () => {
+          loginBox.classList.remove('transform', 'transition-transform', 'duration-300');
+        });
+      }
+          // Cek jika ada cookie remember me dan isi form
+      if (document.cookie.includes('remember_token')) {
+          // Anda mungkin perlu request ke server untuk mendapatkan username
+          // Ini contoh sederhana, sebaiknya gunakan AJAX request
+          const rememberCheckbox = document.getElementById('remember-me');
+          if (rememberCheckbox) {
+              rememberCheckbox.checked = true;
+          }
+      }
+    });
+  </script>
 </body>
-<?php include 'templates/footer.php'; ?>
 </html>

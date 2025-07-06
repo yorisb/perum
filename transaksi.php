@@ -268,10 +268,13 @@ if (!empty($_SESSION['success_message'])) {
           <label for="konsumen" class="required">Konsumen</label>
           <select name="id_konsumen" id="konsumen" required></select>
         </div>
-        
         <div class="form-group">
           <label for="kode_konsumen">Kode Konsumen</label>
           <input type="text" id="kode_konsumen" name="kode_konsumen" readonly>
+        </div>
+        <div class="form-group">
+          <label for="nama_lengkap">Nama Lengkap Konsumen</label>
+          <input type="text" id="nama_lengkap" name="nama_lengkap" readonly>
         </div>
       </div>
     </div>
@@ -285,7 +288,8 @@ if (!empty($_SESSION['success_message'])) {
           <select name="id_unit" id="unit_select" required>
             <option value="">Pilih Unit</option>
             <?php
-              $query = $conn->query("SELECT * FROM unit_properti");
+              // Tampilkan hanya yang status = 0
+              $query = $conn->query("SELECT * FROM unit_properti WHERE status = 0");
               while ($row = $query->fetch_assoc()) {
                 echo "<option 
                         value='{$row['id']}' 
@@ -427,28 +431,20 @@ if (!empty($_SESSION['success_message'])) {
             <input type="number" id="total_akhir" name="total_akhir" value="0" readonly>
           </div>
         </div>
-        
-        <div class="form-group">
-          <label for="cara_pembayaran">Cara Pembayaran</label>
-          <input type="text" id="cara_pembayaran" name="cara_pembayaran">
+          
+        <div class="mb-4">
+            <label for="cara_pembayaran" class="block mb-2 text-sm font-medium text-gray-900">Cara Pembayaran</label>
+            <select id="cara_pembayaran" name="cara_pembayaran" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                <option value="">-- Pilih Cara Pembayaran --</option>
+                <option value="CASH">CASH</option>
+                <option value="KPR BANK">KPR BANK</option>
+            </select>
         </div>
-        
-        <div class="form-group">
-          <label for="periode_cicilan">Periode (Bulan)</label>
-          <input type="number" id="periode_cicilan" name="periode_cicilan" oninput="updateCicilan()">
-        </div>
-        
-        <div class="form-group">
-          <label for="cicilan">Cicilan</label>
-          <div class="currency-input">
-            <input type="number" id="cicilan" name="cicilan" value="0" readonly>
-          </div>
-        </div>
+    
       </div>
       
       <!-- Installment Fields -->
       <div class="form-group">
-        <label>Angsuran Uang Muka</label>
         <div id="angsuran_container" class="angsuran-grid"></div>
       </div>
     </div>
@@ -474,7 +470,18 @@ if (!empty($_SESSION['success_message'])) {
       </div>
     </div>
     
-    <button type="submit" class="btn btn-block">Simpan Transaksi</button>
+    <div class="flex justify-between">
+        <!-- Tombol Kembali -->
+        <a href="daftar_transaksi.php" class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-800 text-sm font-medium rounded-md hover:bg-gray-400">
+            ← Kembali
+        </a>
+
+        <!-- Tombol Simpan -->
+        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+            Simpan Transaksi
+        </button>
+    </div>
+
   </form>
 </div>
 
@@ -536,35 +543,34 @@ if (!empty($_SESSION['success_message'])) {
   </style>
 
 <script>
-    $(document).ready(function() {
-    // Initialize Select2 for customer dropdown
-    $('#konsumen').select2({
-      placeholder: 'Ketik nama konsumen...',
-      ajax: {
-        url: 'cari_konsumen.php',
-        dataType: 'json',
-        delay: 250,
-        data: function (params) {
-          return { search: params.term };
-        },
-        processResults: function (data) {
-          return {
-            results: data.map(k => ({
-              id: k.id,
-              text: k.kode + ' - ' + k.nama_lengkap,
-              kode: k.kode
-            }))
-          };
-        },
-        cache: true
-      }
-    });
+  $('#konsumen').select2({
+    placeholder: 'Ketik nama konsumen...',
+    ajax: {
+      url: 'cari_konsumen.php',
+      dataType: 'json',
+      delay: 250,
+      data: function (params) {
+        return { search: params.term };
+      },
+      processResults: function (data) {
+        return {
+          results: data.map(k => ({
+            id: k.id,
+            text: k.kode + ' - ' + k.nama_lengkap,
+            kode: k.kode,
+            nama_lengkap: k.nama_lengkap // pastikan API mengirim field ini
+          }))
+        };
+      },
+      cache: true
+    }
+  });
 
-    // Update customer code when customer is selected
-    $('#konsumen').on('select2:select', function (e) {
-      const selected = e.params.data;
-      $('#kode_konsumen').val(selected.kode);
-    });
+  // Update customer code and name when customer is selected
+  $('#konsumen').on('select2:select', function (e) {
+    const selected = e.params.data;
+    $('#kode_konsumen').val(selected.kode);
+    $('#nama_lengkap').val(selected.nama_lengkap);
 
     // Auto-fill property data when unit is selected
     $('#unit_select').on('change', function () {

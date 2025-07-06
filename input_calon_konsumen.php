@@ -103,18 +103,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $scan_kk = uploadFile('scan_kk', 'uploads/kk/');
         $scan_slip_gaji = uploadFile('scan_slip_gaji', 'uploads/slip_gaji/');
         $scan_npwp = uploadFile('scan_npwp', 'uploads/npwp/');
-        $scan_ijazah = uploadFile('scan_ijazah', 'uploads/ijazah/');
 
         // Gunakan prepared statement untuk keamanan
         $stmt = $conn->prepare("INSERT INTO calon_konsumen (
-            kode, npwp, nama_lengkap, no_hp, kartu_id, no_kartu_id, scan_ktp, scan_kk, scan_slip_gaji, scan_npwp, scan_ijazah,
+            kode, npwp, nama_lengkap, no_hp, kartu_id, no_kartu_id, scan_ktp, scan_kk, scan_slip_gaji, scan_npwp,
             alamat_lengkap, ket_boking, email, gaji, pekerjaan, nama_kantor, alamat_kantor, telp_kantor, ket_kerja,
             status_pasangan, nama_pasangan, hp_pasangan, kerja_pasangan, alamat_kerja_pasangan, ket_pasangan,
             nama_keluarga, hubungan_keluarga, telp_keluarga, alamat_keluarga
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-        $stmt->bind_param("ssssssssssssssssssssssssssssss", 
-            $kode, $npwp, $nama_lengkap, $no_hp, $kartu_id, $no_kartu_id, $scan_ktp, $scan_kk, $scan_slip_gaji, $scan_npwp, $scan_ijazah,
+        $stmt->bind_param("sssssssssssssssssssssssssssss", 
+            $kode, $npwp, $nama_lengkap, $no_hp, $kartu_id, $no_kartu_id, $scan_ktp, $scan_kk, $scan_slip_gaji, $scan_npwp,
             $alamat_lengkap, $ket_boking, $email, $gaji, $pekerjaan, $nama_kantor, $alamat_kantor, $telp_kantor, $ket_kerja,
             $status_pasangan, $nama_pasangan, $hp_pasangan, $kerja_pasangan, $alamat_kerja_pasangan, $ket_pasangan,
             $nama_keluarga, $hubungan_keluarga, $telp_keluarga, $alamat_keluarga

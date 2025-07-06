@@ -252,7 +252,6 @@ if ($conn->connect_error) {
             <th class="px-4 py-3">Type</th>
             <th class="px-4 py-3">Harga Total</th>
             <th class="px-4 py-3">Uang Muka</th>
-            <th class="px-4 py-3">Cicilan</th>
             <th class="px-4 py-3">Cara Bayar</th>
             <th class="px-4 py-3">Tgl Transaksi</th>
             <th class="px-4 py-3">Status</th>
@@ -277,7 +276,6 @@ if ($conn->connect_error) {
             $tgl_transaksi = date('d/m/Y', strtotime($row['tgl_transaksi']));
             $harga_total = 'Rp ' . number_format($row['total_setelah_penambahan'], 0, ',', '.');
             $uang_muka = 'Rp ' . number_format($row['uang_muka'], 0, ',', '.');
-            $cicilan = $row['cicilan'] ? 'Rp ' . number_format($row['cicilan'], 0, ',', '.') : '-';
 
             echo "
             <tr>
@@ -287,7 +285,6 @@ if ($conn->connect_error) {
               <td class='px-4 py-3'>{$row['type']}</td>
               <td class='px-4 py-3'>{$harga_total}</td>
               <td class='px-4 py-3'>{$uang_muka}</td>
-              <td class='px-4 py-3'>{$cicilan}</td>
               <td class='px-4 py-3'>{$row['cara_pembayaran']}</td>
               <td class='px-4 py-3'>{$tgl_transaksi}</td>
               <td class='px-4 py-3'>

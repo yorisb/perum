@@ -156,28 +156,39 @@ $defaultAvatar = 'data:image/svg+xml;base64,' . base64_encode(
         </ul>
       <?php endif; ?>
       
-        <!-- Combo Button untuk operasional -->
+      <!-- Combo Button untuk Keuangan -->
       <?php if ($_SESSION['role'] == 'superadmin' || $_SESSION['role'] == 'admin'): ?>
-        <button type="button" class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="operasionalDropdown" data-collapse-toggle="operasionalDropdown">
-          <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Operasional</span>
+        <button type="button" class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo in_array(basename($_SERVER['PHP_SELF']), ['tampil_pemasukan.php', 'form_pemasukan.php', 'form_pengeluaran.php']) ? 'bg-green-100 dark:bg-green-700' : ''; ?>" aria-controls="keuanganDropdown" data-collapse-toggle="keuanganDropdown">
+          <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Keuangan</span>
           <svg class="w-3 h-3 ml-auto" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
           </svg>
         </button>
-        <!-- Dropdown Menu -->
-        <ul id="operasionalDropdown" class="hidden py-2 space-y-2">
+
+        <!-- Dropdown Menu Keuangan -->
+        <ul id="keuanganDropdown" class="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['tampil_pemasukan.php', 'form_pemasukan.php', 'form_pengeluaran.php']) ? '' : 'hidden'; ?> py-2 space-y-2">
           <li>
-            <a href="#" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Daftar Kwitansi</a>
+            <a href="tampil_pemasukan.php" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo in_array(basename($_SERVER['PHP_SELF']), ['tampil_pemasukan.php', 'form_pemasukan.php']) ? 'bg-green-100 dark:bg-green-700' : ''; ?>">
+              <svg class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900 dark:group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+              <span class="ml-3">Pemasukan</span>
+            </a>
           </li>
           <li>
-            <a href="#" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Daftar Surat</a>
+            <a href="form_pengeluaran.php" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo basename($_SERVER['PHP_SELF']) == 'form_pengeluaran.php' ? 'bg-green-100 dark:bg-green-700' : ''; ?>">
+              <svg class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900 dark:group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+              </svg>
+              <span class="ml-3">Pengeluaran</span>
+            </a>
           </li>
         </ul>
       <?php endif; ?>
 
 
       <!-- Combo Button untuk Karyawan -->
-      <?php if ($_SESSION['role'] == 'superadmin' || $_SESSION['role'] == 'admin'): ?>
+    <?php if ($_SESSION['role'] == 'superadmin' || $_SESSION['role'] == 'admin'): ?>
       <button type="button" class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo in_array(basename($_SERVER['PHP_SELF']), ['karyawan.php', 'add_karyawan.php', 'karyawan_resign.php', 'edit_karyawan.php']) ? 'bg-green-100 dark:bg-green-700' : ''; ?>" aria-controls="karyawanDropdown" data-collapse-toggle="karyawanDropdown">
         <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Karyawan</span>
         <svg class="w-3 h-3 ml-auto" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
@@ -187,17 +198,17 @@ $defaultAvatar = 'data:image/svg+xml;base64,' . base64_encode(
 
       <!-- Dropdown Menu -->
       <ul id="karyawanDropdown" class="<?php echo in_array(basename($_SERVER['PHP_SELF']), ['karyawan.php', 'add_karyawan.php', 'karyawan_resign.php', 'edit_karyawan.php']) ? '' : 'hidden'; ?> py-2 space-y-2">
-        
+
         <li>
-          <a href="karyawan.php" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo basename($_SERVER['PHP_SELF']) == 'karyawan.php', 'add_karyawan.php' ? 'bg-green-100 dark:bg-green-700' : ''; ?>">
+          <a href="karyawan.php" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo basename($_SERVER['PHP_SELF']) == 'karyawan.php' ? 'bg-green-100 dark:bg-green-700' : ''; ?>">
           <svg class="w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
               <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 12.094A5.973 5.973 0 004 15v1H1v-1a3 3 0 013.75-2.906z"></path>
             </svg>
-            <span class="ml-3">Daftar Karyawan</span>
+            <span class="ml-3">Karyawan</span>
           </a>
         </li>
         
-        <li>
+        <!-- <li>
           <a href="karyawan_resign.php" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo basename($_SERVER['PHP_SELF']) == 'karyawan_resign.php' ? 'bg-green-100 dark:bg-green-700' : ''; ?>">
           <svg class="w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
               <path fill-rule="evenodd" d="M11 4a4 4 0 100 8 4 4 0 000-8zM6.75 8a.75.75 0 000 1.5h8.5a.75.75 0 000-1.5h-8.5z" clip-rule="evenodd"></path>
@@ -205,31 +216,37 @@ $defaultAvatar = 'data:image/svg+xml;base64,' . base64_encode(
             </svg>
             <span class="ml-3">Karyawan Resign</span>
           </a>
-        </li>
+        </li> -->
 
       </ul>
-<?php endif; ?>
+    <?php endif; ?>
 
-        <!-- Combo Button untuk setproy -->
+      <!-- Combo Button untuk Setting Unit -->
       <?php if ($_SESSION['role'] == 'superadmin' || $_SESSION['role'] == 'admin'): ?>
-        <button type="button" class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="setproyDropdown" data-collapse-toggle="setproyDropdown">
+        <?php
+          // Cek apakah halaman aktif berada di dalam folder unit/ dan file unit.php
+          $currentPage = basename($_SERVER['PHP_SELF']);
+          $isUnitActive = strpos($_SERVER['PHP_SELF'], 'unit.php') !== false;
+        ?>
+        <button type="button" class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo $isUnitActive ? 'bg-green-100 dark:bg-green-700' : ''; ?>" aria-controls="setproyDropdown" data-collapse-toggle="setproyDropdown">
           <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Setting Unit</span>
           <svg class="w-3 h-3 ml-auto" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
           </svg>
         </button>
+
         <!-- Dropdown Menu -->
-        <ul id="setproyDropdown" class="hidden py-2 space-y-2">
+        <ul id="setproyDropdown" class="<?php echo $isUnitActive ? '' : 'hidden'; ?> py-2 space-y-2">
           <li>
-            <a href="#" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Proyek</a>
-          </li>
-          <li>
-            <a href="#" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Unit</a>
+            <a href="unit.php" class="flex items-center w-full p-2 text-base transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 <?php echo $isUnitActive ? 'bg-green-100 dark:bg-green-700' : ''; ?>">
+              <svg class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900 dark:group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+              </svg>
+              <span class="ml-3">Unit Properti</span>
+            </a>
           </li>
         </ul>
       <?php endif; ?>
-
-
 
         <!-- Profile/Login -->
         <div class="relative border-t pt-4 pb-32">
@@ -288,6 +305,8 @@ $defaultAvatar = 'data:image/svg+xml;base64,' . base64_encode(
     { button: '[aria-controls="laporanDropdown"]', dropdownId: 'laporanDropdown' },
     { button: '[aria-controls="pembayaranDropdown"]', dropdownId: 'pembayaranDropdown' },
     { button: '[aria-controls="operasionalDropdown"]', dropdownId: 'operasionalDropdown' },
+    { button: '[aria-controls="setproyDropdown"]', dropdownId: 'setproyDropdown' },
+    { button: '[aria-controls="keuanganDropdown"]', dropdownId: 'keuanganDropdown' }, // Tambahkan ini
   ];
 
   dropdownButtons.forEach(({ button, dropdownId }) => {

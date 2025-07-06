@@ -7,11 +7,39 @@ if (!isset($_SESSION['username'])) {
     exit();
 }
 
-// Include config dengan error handling
+// Proses pembayaran jika form dikirim
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bayar_angsuran'])) {
+    try {
+        include 'routes/config.php';
+        
+        $angsuran_id = $_POST['angsuran_id'];
+        $tgl_bayar = $_POST['tgl_bayar'];
+        $metode_bayar = $_POST['metode_bayar'];
+        
+        // Update status angsuran
+        $update_query = $conn->prepare("UPDATE angsuran SET status = 1 WHERE id = ?");
+        $update_query->bind_param('i', $angsuran_id);
+        
+        if ($update_query->execute()) {
+            $_SESSION['success_message'] = "Pembayaran angsuran berhasil dicatat!";
+            header('Location: pembayaran.php');
+            exit();
+        } else {
+            throw new Exception("Gagal mengupdate status angsuran");
+        }
+    } catch (Exception $e) {
+        $error_message = "Error: " . $e->getMessage();
+    }
+}
+
+// Konfigurasi pagination
+$items_per_page = 10;
+$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($current_page < 1) $current_page = 1;
+
 try {
     include 'routes/config.php';
-    
-    // Validasi koneksi database
+
     if ($conn->connect_error) {
         throw new Exception("Koneksi database gagal: " . $conn->connect_error);
     }
@@ -19,52 +47,103 @@ try {
     $username = $_SESSION['username'];
     $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
     if (!$stmt) {
-        throw new Exception("Error preparing statement: " . $conn->error);
+        throw new Exception("Error menyiapkan statement: " . $conn->error);
     }
-    
     $stmt->bind_param('s', $username);
     if (!$stmt->execute()) {
-        throw new Exception("Error executing query: " . $stmt->error);
+        throw new Exception("Error eksekusi query: " . $stmt->error);
     }
-    
     $result = $stmt->get_result();
     $user = $result->fetch_assoc();
-    
     if (!$user) {
-        throw new Exception("User tidak ditemukan");
+        throw new Exception("Pengguna tidak ditemukan");
     }
 
-    // Ambil dan hapus pesan sukses dari session
+    // Get and clear success message from session
     $loginSuccess = '';
     if (!empty($_SESSION['success_message'])) {
         $loginSuccess = htmlspecialchars($_SESSION['success_message']);
         unset($_SESSION['success_message']);
     }
 
-    // Ambil transaksi dengan rencana_tgl_bayar_pembayaran dalam 31 hari ke depan
-    $today = date('Y-m-d');
-    $thirtyone_days = date('Y-m-d', strtotime('+31 days'));
+    // Parameter pencarian
+    $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-    $query = $conn->prepare("
-        SELECT no_transaksi, nama_unit, id_konsumen, rencana_tgl_bayar_pembayaran, total_akhir
-        FROM transaksi
-        WHERE rencana_tgl_bayar_pembayaran BETWEEN ? AND ?
-        ORDER BY rencana_tgl_bayar_pembayaran ASC
-    ");
+    // QUERY UNTUK DATA BELUM LUNAS - DIUBAH ORDER BY a.id ASC
+    $unpaid_query = "
+        SELECT SQL_CALC_FOUND_ROWS a.id, a.transaksi_id, a.angsuran_amount, a.status, a.tanggal, t.nama_lengkap
+        FROM angsuran a
+        JOIN transaksi t ON a.transaksi_id = t.id
+        WHERE a.status = 0
+    ";
     
-    if (!$query) {
-        throw new Exception("Error preparing transaction query: " . $conn->error);
+    // QUERY UNTUK DATA SUDAH LUNAS - DIUBAH ORDER BY a.id ASC
+    $paid_query = "
+        SELECT SQL_CALC_FOUND_ROWS a.id, a.transaksi_id, a.angsuran_amount, a.status, a.tanggal, t.nama_lengkap
+        FROM angsuran a
+        JOIN transaksi t ON a.transaksi_id = t.id
+        WHERE a.status = 1
+    ";
+
+    // Tambahkan filter pencarian jika ada
+    if ($search_term !== '') {
+        $search_param = "%$search_term%";
+        $unpaid_query .= " AND (a.transaksi_id LIKE ? OR t.nama_lengkap LIKE ?)";
+        $paid_query .= " AND (a.transaksi_id LIKE ? OR t.nama_lengkap LIKE ?)";
     }
-    
-    $query->bind_param('ss', $today, $thirtyone_days);
-    if (!$query->execute()) {
-        throw new Exception("Error executing transaction query: " . $query->error);
+
+    // Tambahkan sorting dan pagination - DIUBAH MENJADI ORDER BY a.id ASC
+    $unpaid_query .= " ORDER BY a.id DESC LIMIT ?, ?";
+    $paid_query .= " ORDER BY a.id DESC LIMIT ?, ?";
+
+    // EKSEKUSI QUERY BELUM LUNAS
+    $unpaid_stmt = $conn->prepare($unpaid_query);
+    if (!$unpaid_stmt) {
+        throw new Exception("Error menyiapkan query belum lunas: " . $conn->error);
     }
-    
-    $transactions_result = $query->get_result();
+
+    $offset = ($current_page - 1) * $items_per_page;
+
+    // Binding parameter untuk unpaid_stmt
+    if ($search_term !== '') {
+        $unpaid_stmt->bind_param('ssii', $search_param, $search_param, $offset, $items_per_page);
+    } else {
+        $unpaid_stmt->bind_param('ii', $offset, $items_per_page);
+    }
+
+    if (!$unpaid_stmt->execute()) {
+        throw new Exception("Error eksekusi query belum lunas: " . $unpaid_stmt->error);
+    }
+    $unpaid_result = $unpaid_stmt->get_result();
+
+    // Hitung total records untuk pagination belum lunas
+    $total_rows_unpaid = $conn->query("SELECT FOUND_ROWS()")->fetch_row()[0];
+    $total_pages_unpaid = ceil($total_rows_unpaid / $items_per_page);
+
+    // EKSEKUSI QUERY SUDAH LUNAS
+    $paid_stmt = $conn->prepare($paid_query);
+    if (!$paid_stmt) {
+        throw new Exception("Error menyiapkan query sudah lunas: " . $conn->error);
+    }
+
+    // Binding parameter untuk paid_stmt
+    if ($search_term !== '') {
+        $paid_stmt->bind_param('ssii', $search_param, $search_param, $offset, $items_per_page);
+    } else {
+        $paid_stmt->bind_param('ii', $offset, $items_per_page);
+    }
+
+    if (!$paid_stmt->execute()) {
+        throw new Exception("Error eksekusi query sudah lunas: " . $paid_stmt->error);
+    }
+    $paid_result = $paid_stmt->get_result();
+
+    // Hitung total records untuk pagination sudah lunas
+    $total_rows_paid = $conn->query("SELECT FOUND_ROWS()")->fetch_row()[0];
+    $total_pages_paid = ceil($total_rows_paid / $items_per_page);
 
 } catch (Exception $e) {
-    $error_message = "Terjadi kesalahan: " . $e->getMessage();
+    $error_message = "Error: " . $e->getMessage();
 }
 ?>
 
@@ -72,210 +151,334 @@ try {
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Tenggat Waktu Pembayaran</title>
+    <title>Data Angsuran</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://unpkg.com/flowbite@1.6.5/dist/flowbite.min.js" defer></script>
 </head>
-<body class="bg-gray-200 min-h-screen flex">    
-<body class="bg-gray-100 min-h-screen flex">    
 
-  <!-- Sidebar Toggle Button -->
-  <button id="sidebarToggle" class="text-gray-500 bg-white p-2 rounded-md border-2 border-gray-500 fixed top-4 left-4 z-50">
-    &#9776; <!-- Hamburger Icon -->
-  </button>
+<body class="bg-gray-200 min-h-screen flex">    
+    <!-- Sidebar Toggle Button -->
+    <button id="sidebarToggle" class="text-gray-500 bg-white p-2 rounded-md border-2 border-gray-500 fixed top-4 left-4 z-50">
+        &#9776;
+    </button>
 
     <?php include 'templates/sidebar.php'; ?>
 
-  <div id="main-content" class="flex-1 ml-64 p-6 transition-all duration-300 ease-out">
-    <!-- Navbar -->
-    <div id="navbar" class=" rounded-md fixed top-0 left-0 w-full z-10 transition-all duration-300 ease-out ml-64">
-      <?php include 'templates/navbar.php'; ?>
-    </div>
+    <div id="main-content" class="flex-1 ml-64 p-6 transition-all duration-300 ease-out">
+        <!-- Navbar -->
+        <div id="navbar" class="rounded-md fixed top-0 left-0 w-full z-10 transition-all duration-300 ease-out ml-64">
+            <?php include 'templates/navbar.php'; ?>
+        </div>
 
-    <!-- Header -->
-    <header class="bg-white shadow-md mt-16 rounded-lg p-6 mb-4">
-      <h1 class="text-3xl font-extrabold text-gray-800">Notifikasi Tenggat Waktu Pembayaran (H-31)</h1>
-      <p class="text-gray-600 mt-2">Berikut adalah transaksi yang akan jatuh tempo pembayaran dalam 31 hari ke depan.</p>
-    </header>
-        <main class="flex-1 p-4 md:p-6 mt-8">
-            <div class="max-w-6xl mx-auto">
-                
-                <?php if (isset($error_message)): ?>
-                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md shadow-md mb-4">
-                        <?= $error_message ?>
-                    </div>
+        <!-- Header -->
+        <div class="rounded-lg max-w-7xl mx-auto p-4 mt-4">
+            <header class="bg-white shadow-md mt-12 rounded-lg p-6">
+                <h1 class="text-3xl font-extrabold text-gray-800">
+                    Data Angsuran
+                </h1>
+                <p class="text-gray-600 mt-2">
+                    Daftar seluruh angsuran berdasarkan transaksi.
+                </p>
+            </header>
+
+            <!-- Form Pencarian -->
+            <form method="get" class="mt-4 flex gap-2 items-center">
+                <input type="text" name="search" placeholder="Cari ID Transaksi atau Nama..." 
+                    value="<?= htmlspecialchars($search_term) ?>"
+                    class="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 w-full max-w-md">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    <i class="fas fa-search mr-1"></i> Cari
+                </button>
+                <?php if ($search_term): ?>
+                    <a href="pembayaran.php" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                        <i class="fas fa-times mr-1"></i> Reset
+                    </a>
                 <?php endif; ?>
-                
-                <?php if (!empty($loginSuccess)): ?>
-                    <div id="login-alert" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md shadow-md flex items-start gap-3 text-sm mb-4 animate-fade-in-down">
-                        <i class="fas fa-check-circle mt-0.5 text-green-700 flex-shrink-0"></i>
-                        <div class="flex-1">
-                            <p class="font-semibold">Login berhasil!</p>
-                            <p class="text-xs"><?= $loginSuccess ?></p>
-                        </div>
-                    </div>
-                <?php endif; ?>
+            </form>
 
-                <div class="bg-white rounded-xl shadow overflow-hidden">
-                    <?php if (isset($transactions_result) && $transactions_result->num_rows > 0): ?>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200" id="notifikasiTable">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No Transaksi</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Konsumen</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tgl Jatuh Tempo</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sisa Hari</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <?php 
-                                    $no = 1; 
-                                    while ($row = $transactions_result->fetch_assoc()): 
-                                        $due_date = strtotime($row['rencana_tgl_bayar_pembayaran']);
-                                        $sisa_hari = ($due_date - strtotime($today)) / 86400;
-                                        $sisa_hari = floor($sisa_hari);
-                                        
-                                        // Tentukan warna teks berdasarkan sisa hari
-                                        if ($sisa_hari <= 3) {
-                                            $text_color = 'text-red-600';
-                                            $badge_color = 'bg-red-100 text-red-800';
-                                        } elseif ($sisa_hari <= 7) {
-                                            $text_color = 'text-orange-500';
-                                            $badge_color = 'bg-orange-100 text-orange-800';
-                                        } else {
-                                            $text_color = 'text-yellow-600';
-                                            $badge_color = 'bg-yellow-100 text-yellow-800';
-                                        }
-                                        
-                                        // Get payment history for this transaction
-                                        $history_query = $conn->prepare("
-                                            SELECT * FROM transaksi 
-                                            WHERE no_transaksi = ?
-                                            ORDER BY tgl_transaksi DESC
-                                        ");
-                                        $history_query->bind_param('s', $row['no_transaksi']);
-                                        $history_query->execute();
-                                        $history_result = $history_query->get_result();
-                                        $history_count = $history_result->num_rows;
-                                    ?>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500"><?= $no++; ?></td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            <?= htmlspecialchars($row['no_transaksi']); ?>
-                                        </td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <?= htmlspecialchars($row['nama_unit']); ?>
-                                        </td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <?= htmlspecialchars($row['id_konsumen']); ?>
-                                        </td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <?= date('d-m-Y', $due_date); ?>
-                                        </td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-bold <?= $text_color ?>">
-                                            <span class="px-2 py-1 rounded-full text-xs <?= $badge_color ?>">
-                                                <?= $sisa_hari ?> hari lagi
-                                            </span>
-                                        </td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                            <!-- Detail Button -->
-                                            <button type="button" 
-                                                onclick="togglePaymentHistory('<?= htmlspecialchars($row['no_transaksi']) ?>')"
-                                                class="text-blue-600 hover:text-blue-900 focus:outline-none">
-                                                <i class="fas fa-history mr-1"></i> Riwayat (<?= $history_count ?>)
-                                            </button>
-                                            
-                                            <!-- Edit Button -->
-                                            <a href="edit_transaksi.php?id=<?= htmlspecialchars($row['no_transaksi']) ?>" 
-                                               class="text-green-600 hover:text-green-900">
-                                                <i class="fas fa-edit mr-1"></i> Edit
-                                            </a>
-                                            
-                                            <!-- Payment Button -->
-                                            <button onclick="openPaymentModal(
-                                                '<?= htmlspecialchars($row['no_transaksi']) ?>', 
-                                                '<?= number_format($row['total_akhir'], 0, ',', '.') ?>'
-                                            )" class="text-purple-600 hover:text-purple-900">
-                                                <i class="fas fa-money-bill-wave mr-1"></i> Bayar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    
-                                    <!-- Payment History Row -->
-                                    <tr id="history-<?= htmlspecialchars($row['no_transaksi']) ?>" class="hidden bg-gray-50">
-                                        <td colspan="7" class="px-4 py-4">
-                                            <div class="overflow-x-auto">
-                                                <?php if (isset($history_result) && $history_result->num_rows > 0): ?>
-                                                    <table class="min-w-full divide-y divide-gray-200 text-xs">
-                                                        <thead class="bg-gray-100">
-                                                            <tr>
-                                                                <th class="px-3 py-2 text-left">Tanggal</th>
-                                                                <th class="px-3 py-2 text-left">Jumlah</th>
-                                                                <th class="px-3 py-2 text-left">Metode</th>
-                                                                <th class="px-3 py-2 text-left">Status</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody class="bg-white divide-y divide-gray-200">
-                                                            <?php while ($history = $history_result->fetch_assoc()): ?>
-                                                                <tr>
-                                                                    <td class="px-3 py-2 whitespace-nowrap">
-                                                                        <?= date('d/m/Y', strtotime($history['tgl_transaksi'])) ?>
-                                                                    </td>
-                                                                    <td class="px-3 py-2 whitespace-nowrap">
-                                                                        Rp <?= number_format($history['total_akhir'], 0, ',', '.') ?>
-                                                                    </td>
-                                                                    <td class="px-3 py-2 whitespace-nowrap">
-                                                                        <?= htmlspecialchars($history['cara_pembayaran']) ?>
-                                                                    </td>
-                                                                    <td class="px-3 py-2 whitespace-nowrap">
-                                                                        <?php 
-                                                                            $status_class = $history['status_tanda_jadi'] === 'Masuk' 
-                                                                                ? 'bg-green-100 text-green-800' 
-                                                                                : 'bg-yellow-100 text-yellow-800';
-                                                                        ?>
-                                                                        <span class="px-2 py-1 rounded-full <?= $status_class ?>">
-                                                                            <?= htmlspecialchars($history['status_tanda_jadi']) ?>
-                                                                        </span>
-                                                                    </td>
-                                                                </tr>
-                                                            <?php endwhile; ?>
-                                                        </tbody>
-                                                    </table>
-                                                <?php else: ?>
-                                                    <div class="text-center py-4 text-gray-500">
-                                                        Belum ada riwayat pembayaran
-                                                    </div>
-                                                <?php endif; ?>
-                                            </div>
-                                        </td>
-                                    </tr>
-
-                                    <?php endwhile; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php else: ?>
-                        <div class="text-center p-8">
-                            <i class="fas fa-calendar-check text-4xl text-gray-400 mb-4"></i>
-                            <h3 class="mt-2 text-lg font-medium text-gray-900">Tidak ada notifikasi</h3>
-                            <p class="mt-1 text-sm text-gray-500">Tidak ada transaksi yang akan jatuh tempo dalam 14 hari ke depan.</p>
+            <main class="flex-1 p-0 md:p-0 mt-2">
+                <div class="bg-white rounded-xl shadow overflow-x-auto mt-4">
+                    <?php if (isset($error_message)): ?>
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md shadow-md mb-4">
+                            <?= $error_message ?>
                         </div>
                     <?php endif; ?>
+                    
+                    <?php if (!empty($loginSuccess)): ?>
+                        <div id="login-alert" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md shadow-md flex items-start gap-3 text-sm mb-4 animate-fade-in-down">
+                            <i class="fas fa-check-circle mt-0.5 text-green-700 flex-shrink-0"></i>
+                            <div class="flex-1">
+                                <p class="font-semibold">Berhasil!</p>
+                                <p class="text-xs"><?= $loginSuccess ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Tab untuk memisahkan angsuran lunas/belum lunas -->
+                    <div class="mb-4 border-b border-gray-200">
+                        <ul class="flex flex-wrap -mb-px" id="myTab" data-tabs-toggle="#myTabContent" role="tablist">
+                            <li class="mr-2" role="presentation">
+                                <button class="inline-block p-4 border-b-2 rounded-t-lg" id="unpaid-tab" data-tabs-target="#unpaid" type="button" role="tab" aria-controls="unpaid" aria-selected="true">
+                                    Belum Lunas
+                                </button>
+                            </li>
+                            <li class="mr-2" role="presentation">
+                                <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300" id="paid-tab" data-tabs-target="#paid" type="button" role="tab" aria-controls="paid" aria-selected="false">
+                                    Sudah Lunas
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div id="myTabContent">
+                        <!-- Tab Belum Lunas -->
+                        <div class="hidden p-4 rounded-lg bg-gray-50" id="unpaid" role="tabpanel" aria-labelledby="unpaid-tab">
+                            <?php if (isset($unpaid_result) && $unpaid_result->num_rows > 0): ?>
+                                <table class="min-w-full divide-y divide-gray-200" id="unpaidTable">
+                                    <thead class="bg-blue-100">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Transaksi</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Lengkap</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Angsuran</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Jatuh Tempo</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <?php 
+                                        $no = 1;
+                                        while ($installment = $unpaid_result->fetch_assoc()):
+                                            // Pastikan tanggal tidak null sebelum diproses
+                                            $due_date = !empty($installment['tanggal']) ? strtotime($installment['tanggal']) : 0;
+                                            $today = strtotime(date('Y-m-d'));
+                                            $sisa_hari = $due_date > 0 ? floor(($due_date - $today) / 86400) : '-';
+
+                                            if ($due_date > 0 && $sisa_hari <= 3) {
+                                                $text_color = 'text-red-600';
+                                                $badge_color = 'bg-red-100 text-red-800';
+                                            } elseif ($due_date > 0 && $sisa_hari <= 7) {
+                                                $text_color = 'text-orange-500';
+                                                $badge_color = 'bg-orange-100 text-orange-800';
+                                            } else {
+                                                $text_color = 'text-yellow-600';
+                                                $badge_color = 'bg-yellow-100 text-yellow-800';
+                                            }
+                                        ?>
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500"><?= $no++; ?></td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                <?= htmlspecialchars($installment['transaksi_id']) ?>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                <?= htmlspecialchars($installment['nama_lengkap']) ?>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                Rp <?= number_format($installment['angsuran_amount'], 0, ',', '.') ?>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                                <span class="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                                                    Belum Lunas
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 <?= $text_color ?>">
+                                                <?= $due_date > 0 ? date('d-m-Y', $due_date) : '-' ?>
+                                                <?php if ($due_date > 0 && $sisa_hari >= 0): ?>
+                                                <span class="px-2 py-1 rounded-full text-xs <?= $badge_color ?> ml-2">
+                                                    <?= $sisa_hari ?> hari lagi
+                                                </span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                                <button onclick="openPaymentModal(
+                                                    '<?= $installment['id'] ?>',
+                                                    '<?= htmlspecialchars($installment['transaksi_id']) ?>',
+                                                    '<?= htmlspecialchars($installment['nama_lengkap']) ?>',
+                                                    '<?= number_format($installment['angsuran_amount'], 0, ',', '.') ?>'
+                                                )" class="text-purple-600 hover:text-purple-900">
+                                                    <i class="fas fa-money-bill-wave mr-1"></i> Bayar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <?php endwhile; ?>
+                                    </tbody>
+                                </table>
+                                
+                                <!-- Pagination -->
+                                <div class="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+                                    <div class="flex-1 flex justify-between sm:hidden">
+                                        <?php if ($current_page > 1): ?>
+                                            <a href="?page=<?= $current_page - 1 ?><?= $search_term ? '&search='.urlencode($search_term) : '' ?>" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                                Sebelumnya
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if ($current_page < $total_pages_unpaid): ?>
+                                            <a href="?page=<?= $current_page + 1 ?><?= $search_term ? '&search='.urlencode($search_term) : '' ?>" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                                Selanjutnya
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-700">
+                                                Menampilkan <span class="font-medium"><?= (($current_page - 1) * $items_per_page) + 1 ?></span> sampai <span class="font-medium"><?= min($current_page * $items_per_page, $total_rows_unpaid) ?></span> dari <span class="font-medium"><?= $total_rows_unpaid ?></span> hasil
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                                <?php if ($current_page > 1): ?>
+                                                    <a href="?page=<?= $current_page - 1 ?><?= $search_term ? '&search='.urlencode($search_term) : '' ?>" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                        <span class="sr-only">Sebelumnya</span>
+                                                        <i class="fas fa-chevron-left"></i>
+                                                    </a>
+                                                <?php endif; ?>
+
+                                                <?php 
+                                                $start_page = max(1, $current_page - 2);
+                                                $end_page = min($total_pages_unpaid, $current_page + 2);
+                                                
+                                                for ($i = $start_page; $i <= $end_page; $i++): 
+                                                ?>
+                                                    <a href="?page=<?= $i ?><?= $search_term ? '&search='.urlencode($search_term) : '' ?>" class="<?= $i == $current_page ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50' ?> relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                                        <?= $i ?>
+                                                    </a>
+                                                <?php endfor; ?>
+
+                                                <?php if ($current_page < $total_pages_unpaid): ?>
+                                                    <a href="?page=<?= $current_page + 1 ?><?= $search_term ? '&search='.urlencode($search_term) : '' ?>" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                        <span class="sr-only">Selanjutnya</span>
+                                                        <i class="fas fa-chevron-right"></i>
+                                                    </a>
+                                                <?php endif; ?>
+                                            </nav>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <div class="text-center p-8">
+                                    <i class="fas fa-calendar-check text-4xl text-gray-400 mb-4"></i>
+                                    <h3 class="mt-2 text-lg font-medium text-gray-900">Tidak ada angsuran belum lunas</h3>
+                                    <p class="mt-1 text-sm text-gray-500"><?= $search_term ? 'Hasil pencarian tidak ditemukan' : 'Semua angsuran telah dibayar.' ?></p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <!-- Tab Sudah Lunas -->
+                        <div class="hidden p-4 rounded-lg bg-gray-50" id="paid" role="tabpanel" aria-labelledby="paid-tab">
+                            <?php if (isset($paid_result) && $paid_result->num_rows > 0): ?>
+                                <table class="min-w-full divide-y divide-gray-200" id="paidTable">
+                                    <thead class="bg-green-100">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Transaksi</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Lengkap</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Angsuran</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Pembayaran</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <?php 
+                                        $no = 1;
+                                        while ($installment = $paid_result->fetch_assoc()): 
+                                            $due_date = strtotime($installment['tanggal']);
+                                        ?>
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500"><?= $no++; ?></td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                <?= htmlspecialchars($installment['transaksi_id']) ?>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                <?= htmlspecialchars($installment['nama_lengkap']) ?>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                Rp <?= number_format($installment['angsuran_amount'], 0, ',', '.') ?>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                                <span class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                                    Lunas
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <?= date('d-m-Y', $due_date) ?>
+                                            </td>
+                                        </tr>
+                                        <?php endwhile; ?>
+                                    </tbody>
+                                </table>
+                                
+                                <!-- Pagination untuk yang sudah lunas -->
+                                <div class="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+                                    <div class="flex-1 flex justify-between sm:hidden">
+                                        <?php if ($current_page > 1): ?>
+                                            <a href="?page=<?= $current_page - 1 ?><?= $search_term ? '&search='.urlencode($search_term) : '' ?>" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                                Sebelumnya
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if ($current_page < $total_pages_paid): ?>
+                                            <a href="?page=<?= $current_page + 1 ?><?= $search_term ? '&search='.urlencode($search_term) : '' ?>" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                                Selanjutnya
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-700">
+                                                Menampilkan <span class="font-medium"><?= (($current_page - 1) * $items_per_page) + 1 ?></span> sampai <span class="font-medium"><?= min($current_page * $items_per_page, $total_rows_paid) ?></span> dari <span class="font-medium"><?= $total_rows_paid ?></span> hasil
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                                <?php if ($current_page > 1): ?>
+                                                    <a href="?page=<?= $current_page - 1 ?><?= $search_term ? '&search='.urlencode($search_term) : '' ?>" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                        <span class="sr-only">Sebelumnya</span>
+                                                        <i class="fas fa-chevron-left"></i>
+                                                    </a>
+                                                <?php endif; ?>
+
+                                                <?php 
+                                                $start_page = max(1, $current_page - 2);
+                                                $end_page = min($total_pages_paid, $current_page + 2);
+                                                
+                                                for ($i = $start_page; $i <= $end_page; $i++): 
+                                                ?>
+                                                    <a href="?page=<?= $i ?><?= $search_term ? '&search='.urlencode($search_term) : '' ?>" class="<?= $i == $current_page ? 'bg-green-50 border-green-500 text-green-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50' ?> relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                                        <?= $i ?>
+                                                    </a>
+                                                <?php endfor; ?>
+
+                                                <?php if ($current_page < $total_pages_paid): ?>
+                                                    <a href="?page=<?= $current_page + 1 ?><?= $search_term ? '&search='.urlencode($search_term) : '' ?>" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                        <span class="sr-only">Selanjutnya</span>
+                                                        <i class="fas fa-chevron-right"></i>
+                                                    </a>
+                                                <?php endif; ?>
+                                            </nav>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <div class="text-center p-8">
+                                    <i class="fas fa-calendar-check text-4xl text-gray-400 mb-4"></i>
+                                    <h3 class="mt-2 text-lg font-medium text-gray-900">Tidak ada angsuran sudah lunas</h3>
+                                    <p class="mt-1 text-sm text-gray-500"><?= $search_term ? 'Hasil pencarian tidak ditemukan' : 'Belum ada angsuran yang dibayar.' ?></p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
-    <!-- Modal Pembayaran -->
-    <div id="paymentModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-full md:w-96 shadow-lg rounded-md bg-white">
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+        <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg leading-6 font-medium text-gray-900">Konfirmasi Pembayaran</h3>
@@ -286,26 +489,28 @@ try {
                 <div class="mt-2 px-4 py-3">
                     <div class="bg-blue-50 p-3 rounded-md mb-4">
                         <p class="text-sm text-gray-700 mb-1">
-                            <span class="font-semibold">No. Transaksi:</span> 
+                            <span class="font-semibold">ID Transaksi:</span> 
                             <span id="modalTransaksi" class="font-mono"></span>
                         </p>
+                        <p class="text-sm text-gray-700 mb-1">
+                            <span class="font-semibold">Nama:</span> 
+                            <span id="modalNama" class="font-mono"></span>
+                        </p>
                         <p class="text-sm text-gray-700">
-                            <span class="font-semibold">Total Pembayaran:</span> 
-                            Rp <span id="modalTotal" class="font-mono"></span>
+                            <span class="font-semibold">Jumlah Angsuran:</span> 
+                            Rp <span id="modalAngsuran" class="font-mono"></span>
                         </p>
                     </div>
                     
-                    <form id="paymentForm" method="POST" action="proses_pembayaran.php" class="space-y-4">
-                        <input type="hidden" name="no_transaksi" id="no_transaksi">
+                    <form id="paymentForm" method="POST" action="pembayaran.php" class="space-y-4">
+                        <input type="hidden" name="angsuran_id" id="modalAngsuranId">
+                        <input type="hidden" name="bayar_angsuran" value="1">
                         
                         <div>
-                            <label for="jumlah_bayar" class="block text-sm font-medium text-gray-700 text-left mb-1">Jumlah Bayar</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">Rp</span>
-                                <input type="text" name="jumlah_bayar" id="jumlah_bayar" 
-                                    class="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" 
-                                    required>
-                            </div>
+                            <label for="tgl_bayar" class="block text-sm font-medium text-gray-700 text-left mb-1">Tanggal Pembayaran</label>
+                            <input type="date" name="tgl_bayar" id="tgl_bayar" 
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" 
+                                required value="<?= date('Y-m-d') ?>">
                         </div>
                         
                         <div>
@@ -320,14 +525,6 @@ try {
                                 <option value="Virtual Account">Virtual Account</option>
                             </select>
                         </div>
-                        
-                        <div>
-                            <label for="tgl_transaksi" class="block text-sm font-medium text-gray-700 text-left mb-1">Tanggal Pembayaran</label>
-                            <input type="date" name="tgl_transaksi" id="tgl_transaksi" 
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" 
-                                required value="<?= date('Y-m-d') ?>">
-                        </div>
-                        
                         
                         <div class="flex justify-end space-x-3 pt-4">
                             <button type="button" onclick="closePaymentModal()" 
@@ -345,83 +542,41 @@ try {
         </div>
     </div>
 
-    <!-- JavaScript Libraries -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.tailwindcss.min.js"></script>
-
-  
     <script>
-        // Fungsi untuk toggle history pembayaran
-        function togglePaymentHistory(noTransaksi) {
-            const historyRow = document.getElementById(`history-${noTransaksi}`);
-            historyRow.classList.toggle('hidden');
-            
-            // Scroll ke row yang dibuka
-            historyRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        
-        // Fungsi untuk modal pembayaran
-        function openPaymentModal(noTransaksi, total) {
-            document.getElementById('modalTransaksi').textContent = noTransaksi;
-            document.getElementById('modalTotal').textContent = total;
-            document.getElementById('no_transaksi').value = noTransaksi;
-            document.getElementById('jumlah_bayar').value = total.replace(/\./g, '');
-            document.getElementById('paymentModal').classList.remove('hidden');
-            
-            // Set focus ke input jumlah bayar
-            document.getElementById('jumlah_bayar').focus();
-        }
+        // Sidebar Toggle Script
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const mainContent = document.getElementById('main-content');
+            const navbar = document.getElementById('navbar');
 
-        function closePaymentModal() {
-            document.getElementById('paymentModal').classList.add('hidden');
-        }
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
 
-        // Format input jumlah bayar
-        document.getElementById('jumlah_bayar').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/[^\d]/g, '');
-            e.target.value = new Intl.NumberFormat('id-ID').format(value);
-        });
+                const isHidden = sidebar.classList.contains('-translate-x-full');
 
-        // Submit form pembayaran
-        document.getElementById('paymentForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Format jumlah bayar sebelum submit
-            let jumlahBayar = document.getElementById('jumlah_bayar');
-            jumlahBayar.value = jumlahBayar.value.replace(/\./g, '');
-            
-            // Kirim form via AJAX atau langsung submit
-            this.submit();
-        });
+                mainContent.classList.toggle('ml-64', !isHidden);
+                mainContent.classList.toggle('ml-0', isHidden);
 
-        $(document).ready(function() {
-            $('#notifikasiTable').DataTable({
-                responsive: true,
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                language: {
-                    search: "_INPUT_",
-                    searchPlaceholder: "Cari...",
-                    lengthMenu: "Tampilkan _MENU_ data per halaman",
-                    zeroRecords: "Tidak ada data yang ditemukan",
-                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                    infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
-                    infoFiltered: "(disaring dari _MAX_ total data)",
-                    paginate: {
-                        first: "Pertama",
-                        last: "Terakhir",
-                        next: "Selanjutnya",
-                        previous: "Sebelumnya"
+                if (navbar) {
+                    navbar.classList.toggle('ml-64', !isHidden);
+                    navbar.classList.toggle('pl-16', isHidden);
+                }
+            });
+
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(event) {
+                if (window.innerWidth < 1024 && 
+                    !sidebar.contains(event.target) && 
+                    !sidebarToggle.contains(event.target) &&
+                    !sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.add('-translate-x-full');
+                    mainContent.classList.add('ml-0');
+                    if (navbar) {
+                        navbar.classList.add('pl-16');
+                        navbar.classList.remove('ml-64');
                     }
-                },
-                order: [[4, 'asc']], // Default sorting by due date
-                columnDefs: [
-                    { responsivePriority: 1, targets: 0 }, // No
-                    { responsivePriority: 2, targets: 1 }, // No Transaksi
-                    { responsivePriority: 4, targets: 4 }, // Tgl Jatuh Tempo
-                    { responsivePriority: 3, targets: 5 }, // Sisa Hari
-                    { responsivePriority: 5, targets: -1 } // Aksi
-                ]
+                }
             });
 
             // Auto-hide success message after 5 seconds
@@ -432,46 +587,52 @@ try {
                     setTimeout(() => alert.remove(), 500);
                 }
             }, 5000);
+
+            // Initialize tabs
+            const tabs = document.querySelectorAll('[data-tabs-toggle] [role="tab"]');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const target = document.querySelector(this.getAttribute('data-tabs-target'));
+                    
+                    // Hide all tab contents
+                    document.querySelectorAll('[role="tabpanel"]').forEach(panel => {
+                        panel.classList.add('hidden');
+                    });
+                    
+                    // Show selected tab content
+                    target.classList.remove('hidden');
+                    
+                    // Update active tab styling
+                    tabs.forEach(t => {
+                        t.classList.remove('border-blue-500', 'text-blue-600');
+                        t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    });
+                    
+                    this.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    this.classList.add('border-blue-500', 'text-blue-600');
+                });
+            });
+            
+            // Activate first tab by default
+            if (tabs.length > 0) {
+                tabs[0].click();
+            }
         });
 
-        // Sidebar Toggle for mobile
-        document.addEventListener('DOMContentLoaded', function () {
-            const sidebar = document.getElementById('sidebar');
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const mainContent = document.getElementById('main-content');
-            const navbar = document.getElementById('navbar');
+        // Payment modal functions
+        function openPaymentModal(angsuranId, transaksiId, namaLengkap, angsuranAmount) {
+            document.getElementById('modalAngsuranId').value = angsuranId;
+            document.getElementById('modalTransaksi').textContent = transaksiId;
+            document.getElementById('modalNama').textContent = namaLengkap;
+            document.getElementById('modalAngsuran').textContent = angsuranAmount;
+            document.getElementById('paymentModal').classList.remove('hidden');
+            
+            document.getElementById('tgl_bayar').focus();
+        }
 
-            sidebarToggle.addEventListener('click', () => {
-                sidebar.classList.toggle('-translate-x-full');
-                const isHidden = sidebar.classList.contains('-translate-x-full');
-
-                // Untuk desktop
-                if (window.innerWidth >= 1024) {
-                    mainContent.classList.toggle('lg:ml-64', !isHidden);
-                    mainContent.classList.toggle('ml-0', isHidden);
-                    if (navbar) {
-                        navbar.classList.toggle('ml-64', !isHidden);
-                        navbar.classList.toggle('pl-16', isHidden);
-                    }
-                } else {
-                    // Untuk mobile
-                    mainContent.classList.toggle('ml-0', isHidden);
-                }
-            });
-
-            // Close sidebar when clicking outside on mobile
-            document.addEventListener('click', function(event) {
-                if (
-                    window.innerWidth < 1024 &&
-                    !sidebar.contains(event.target) &&
-                    !sidebarToggle.contains(event.target) &&
-                    !sidebar.classList.contains('-translate-x-full')
-                ) {
-                    sidebar.classList.add('-translate-x-full');
-                    mainContent.classList.add('ml-0');
-                }
-            });
-        });
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
     </script>
 
     <style>
@@ -513,6 +674,27 @@ try {
                 position: fixed;
                 width: 75%;
             }
+        }
+
+        /* Tab styling */
+        [role="tab"] {
+            border-bottom-width: 2px;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            font-weight: 500;
+            color: #6b7280;
+            border-color: transparent;
+        }
+
+        [role="tab"]:hover {
+            color: #374151;
+            border-color: #d1d5db;
+        }
+
+        [role="tab"].border-blue-500 {
+            color: #3b82f6;
+            border-color: #3b82f6;
         }
     </style>
 </body>
