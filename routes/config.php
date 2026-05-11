@@ -1,9 +1,9 @@
 <?php
-$host = 'srv143.niagahoster.com';      // nama host MySQL
-$username = 'n1572337_developer';      // username MySQL
-$password = 'bad_cookies8080';         // password MySQL
-$database = 'n1572337_developer';      // nama database
-$port = '3306';                        // port MySQL
+$host = '';      // nama host MySQL
+$username = '';      // username MySQL
+$password = '';         // password MySQL
+$database = '';      // nama database
+$port = '';                        // port MySQL
 
 // Membuat koneksi ke database menggunakan MySQLi
 $conn = new mysqli($host, $username, $password, $database, $port);
